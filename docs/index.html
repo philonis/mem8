@@ -7,153 +7,213 @@
   <meta name="description" content="mem8 是 OpenClaw 的本地优先记忆插件：SQLite + Ollama，本地持久记忆，约 36% Token 节省。">
   <style>
     :root {
-      --bg: #081120;
-      --bg-soft: #0f1c33;
-      --panel: rgba(18, 31, 55, 0.82);
-      --text: #eff6ff;
-      --muted: #9fb2cc;
+      --bg: #07111f;
+      --bg-soft: #0d1c31;
+      --panel: rgba(16, 27, 46, 0.78);
+      --panel-strong: rgba(11, 20, 36, 0.92);
+      --text: #eef5ff;
+      --muted: #9cb0cd;
       --line: rgba(148, 163, 184, 0.18);
-      --brand: #58d4ff;
-      --brand-2: #6a7dff;
+      --brand: #5ad3ff;
+      --brand-2: #6d7fff;
       --success: #4ade80;
-      --shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
-      --radius: 22px;
+      --glow: rgba(90, 211, 255, 0.24);
+      --shadow: 0 28px 90px rgba(0, 0, 0, 0.33);
+      --radius: 24px;
+      --quote-bg: linear-gradient(135deg, rgba(90, 211, 255, 0.14), rgba(109, 127, 255, 0.12));
     }
+
+    body.light {
+      --bg: #f3f7fd;
+      --bg-soft: #e7eefb;
+      --panel: rgba(255, 255, 255, 0.88);
+      --panel-strong: rgba(255, 255, 255, 0.98);
+      --text: #10203a;
+      --muted: #5b6f8f;
+      --line: rgba(16, 32, 58, 0.12);
+      --brand: #0089d6;
+      --brand-2: #4458ff;
+      --success: #17994e;
+      --glow: rgba(0, 137, 214, 0.18);
+      --shadow: 0 28px 80px rgba(43, 74, 122, 0.13);
+      --quote-bg: linear-gradient(135deg, rgba(0, 137, 214, 0.08), rgba(68, 88, 255, 0.08));
+    }
+
     * { box-sizing: border-box; }
     html { scroll-behavior: smooth; }
     body {
       margin: 0;
       font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       background:
-        radial-gradient(circle at top left, rgba(88, 212, 255, 0.16), transparent 28%),
-        radial-gradient(circle at top right, rgba(106, 125, 255, 0.16), transparent 24%),
-        linear-gradient(180deg, #081120 0%, #09162b 100%);
+        radial-gradient(circle at top left, var(--glow), transparent 30%),
+        radial-gradient(circle at top right, rgba(109, 127, 255, 0.16), transparent 28%),
+        linear-gradient(180deg, var(--bg) 0%, var(--bg-soft) 100%);
       color: var(--text);
       line-height: 1.55;
+      transition: background .25s ease, color .25s ease;
     }
     a { color: inherit; }
-    .container { width: min(1160px, calc(100vw - 40px)); margin: 0 auto; }
+    .container { width: min(1180px, calc(100vw - 40px)); margin: 0 auto; }
     .site-header {
-      position: sticky; top: 0; z-index: 40;
+      position: sticky; top: 0; z-index: 50;
       backdrop-filter: blur(18px);
-      background: rgba(8, 17, 32, 0.72);
-      border-bottom: 1px solid rgba(148, 163, 184, 0.08);
+      background: color-mix(in srgb, var(--bg) 78%, transparent);
+      border-bottom: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
     }
     .header-inner {
       display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 16px 0;
     }
     .logo {
-      display: inline-flex; align-items: center; gap: 10px; text-decoration: none; font-weight: 800; letter-spacing: 0.02em; font-size: 24px;
+      display: inline-flex; align-items: center; gap: 10px; text-decoration: none;
+      font-weight: 900; letter-spacing: .02em; font-size: 24px;
     }
     .logo-dot {
-      width: 12px; height: 12px; border-radius: 50%; background: linear-gradient(135deg, var(--brand), var(--brand-2)); box-shadow: 0 0 20px rgba(88, 212, 255, 0.7);
+      width: 12px; height: 12px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--brand), var(--brand-2));
+      box-shadow: 0 0 22px color-mix(in srgb, var(--brand) 80%, transparent);
     }
-    .nav { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
-    .nav a { text-decoration: none; color: var(--muted); font-size: 14px; }
+    .nav { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+    .nav a {
+      text-decoration: none; color: var(--muted); font-size: 14px; font-weight: 600;
+    }
     .nav a:hover { color: var(--text); }
     .badge {
-      display: inline-flex; align-items: center; padding: 5px 10px; border-radius: 999px;
-      background: rgba(74, 222, 128, 0.14); border: 1px solid rgba(74, 222, 128, 0.2); color: var(--success); font-size: 12px; font-weight: 700;
+      display: inline-flex; align-items: center; padding: 6px 10px; border-radius: 999px;
+      background: color-mix(in srgb, var(--success) 16%, transparent);
+      border: 1px solid color-mix(in srgb, var(--success) 22%, transparent);
+      color: var(--success); font-size: 12px; font-weight: 800;
     }
-    .hero { padding: 78px 0 44px; }
-    .hero-center,
-    .card,
-    .install-panel,
-    .lang-card {
-      background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow);
+    .toggle, .lang-link {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.04);
+      color: var(--text);
+      min-height: 38px;
+      padding: 0 12px;
+      border-radius: 999px;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .hero { padding: 78px 0 36px; }
+    .hero-center, .card, .install-panel, .lang-card, .quote-band {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(12px);
     }
     .hero-center {
-      text-align: center; padding: 46px 28px; position: relative; overflow: hidden;
+      text-align: center; padding: 56px 28px 36px; position: relative; overflow: hidden;
     }
-    .hero-center::before {
-      content: ""; position: absolute; width: 320px; height: 320px; right: -120px; top: -80px; border-radius: 50%;
-      background: radial-gradient(circle, rgba(88, 212, 255, 0.22), transparent 68%);
+    .hero-center::before,
+    .hero-center::after {
+      content: ""; position: absolute; border-radius: 50%; pointer-events: none;
+      background: radial-gradient(circle, var(--glow), transparent 70%);
     }
+    .hero-center::before { width: 320px; height: 320px; left: -100px; top: -80px; }
+    .hero-center::after { width: 280px; height: 280px; right: -80px; bottom: -120px; }
     .eyebrow {
-      display: inline-flex; align-items: center; gap: 8px; color: var(--brand); font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+      display: inline-flex; align-items: center; gap: 8px; color: var(--brand);
+      font-size: 13px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
     }
     h1 {
-      margin: 18px auto 0; max-width: 920px; font-size: clamp(40px, 6vw, 74px); line-height: 0.95; letter-spacing: -0.04em;
+      margin: 18px auto 0; max-width: 980px;
+      font-size: clamp(44px, 6.4vw, 86px); line-height: .92; letter-spacing: -.05em;
     }
     .hero-lead {
-      margin: 22px auto 0; max-width: 760px; color: var(--muted); font-size: 20px;
+      margin: 22px auto 0; max-width: 800px; color: var(--muted); font-size: 21px;
     }
-    .hero-lead strong { color: var(--text); font-weight: 800; }
+    .hero-lead strong { color: var(--text); font-weight: 900; }
     .install-hero {
-      margin: 28px auto 0; max-width: 920px; padding: 18px; border-radius: 20px;
-      background: rgba(255,255,255,0.04); border: 1px solid rgba(88, 212, 255, 0.16);
+      margin: 30px auto 0; max-width: 920px; padding: 20px; border-radius: 22px;
+      background: var(--panel-strong); border: 1px solid color-mix(in srgb, var(--brand) 26%, transparent);
+      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--brand) 10%, transparent);
     }
     .install-hero-label {
-      font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px;
+      font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 10px;
     }
     .install-link {
-      display: block; padding: 18px 20px; border-radius: 16px;
-      background: linear-gradient(135deg, rgba(88,212,255,0.18), rgba(106,125,255,0.18));
-      border: 1px solid rgba(88,212,255,0.26); color: var(--text); text-decoration: none;
-      font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 16px; word-break: break-word;
+      display: block; padding: 20px; border-radius: 18px; text-decoration: none;
+      background: linear-gradient(135deg, color-mix(in srgb, var(--brand) 18%, transparent), color-mix(in srgb, var(--brand-2) 18%, transparent));
+      border: 1px solid color-mix(in srgb, var(--brand) 28%, transparent);
+      color: var(--text); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 16px;
+      word-break: break-word;
     }
-    .install-note {
-      margin-top: 12px; color: var(--muted); font-size: 14px;
-    }
+    .install-note { margin-top: 12px; color: var(--muted); font-size: 14px; }
     .hero-mini {
       margin-top: 22px; display: flex; flex-wrap: wrap; gap: 12px; justify-content: center;
     }
     .pill {
-      padding: 9px 14px; border-radius: 999px; background: rgba(159,178,204,0.08); border: 1px solid rgba(159,178,204,0.12); color: var(--text); font-size: 14px; font-weight: 600;
+      padding: 9px 14px; border-radius: 999px; background: rgba(255,255,255,0.04);
+      border: 1px solid var(--line); color: var(--text); font-size: 14px; font-weight: 700;
     }
     .proof-row {
-      margin-top: 22px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;
+      margin-top: 24px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;
     }
     .proof {
-      padding: 16px; border-radius: 16px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05);
+      padding: 18px; border-radius: 18px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
     }
-    .proof-value { font-size: 30px; font-weight: 800; letter-spacing: -0.03em; }
+    .proof-value { font-size: 32px; font-weight: 900; letter-spacing: -.04em; }
     .proof-value.good { color: var(--success); }
     .proof-value.brand { color: var(--brand); }
     .proof-label { margin-top: 4px; font-size: 13px; color: var(--muted); }
-    section.block { padding: 26px 0 0; }
-    .section-head { margin: 0 0 26px; text-align: center; }
-    .section-head h2 { margin: 0 0 10px; font-size: clamp(30px, 4vw, 48px); letter-spacing: -0.03em; }
+    section.block { padding: 28px 0 0; }
+    .section-head { margin: 0 0 28px; text-align: center; }
+    .section-head h2 {
+      margin: 0 0 10px; font-size: clamp(30px, 4vw, 52px); letter-spacing: -.04em;
+    }
     .section-desc { max-width: 760px; margin: 0 auto; font-size: 17px; color: var(--muted); }
+    .quote-band {
+      margin-top: 28px; padding: 34px 26px; text-align: center; background: var(--quote-bg);
+    }
+    .quote-band blockquote {
+      margin: 0; font-size: clamp(28px, 4vw, 48px); line-height: 1.08; font-weight: 900; letter-spacing: -.04em;
+    }
+    .quote-band p { margin: 14px auto 0; max-width: 760px; color: var(--muted); font-size: 17px; }
     .grid-4, .grid-3 { display: grid; gap: 20px; }
     .grid-4 { grid-template-columns: repeat(4, 1fr); }
     .grid-3 { grid-template-columns: repeat(3, 1fr); }
     .card { padding: 24px; }
     .card-index {
-      color: var(--brand); font-size: 13px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 10px;
+      color: var(--brand); font-size: 13px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 10px;
     }
     .card h3 { margin: 0 0 10px; font-size: 22px; }
-    .card p, .card li, .install-panel p, .install-step p { color: var(--muted); }
-    .compare-panel { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 20px; }
+    .card p, .card li, .install-panel p, .install-step p, .lang-card p, .lang-card li { color: var(--muted); }
+    .compare-panel { display: grid; grid-template-columns: 1.1fr .9fr; gap: 20px; }
     .compare-table { width: 100%; border-collapse: collapse; font-size: 15px; }
     .compare-table th, .compare-table td {
-      padding: 14px 12px; border-bottom: 1px solid rgba(148,163,184,0.12); text-align: left; vertical-align: top;
+      padding: 14px 12px; border-bottom: 1px solid color-mix(in srgb, var(--line) 80%, transparent); text-align: left; vertical-align: top;
     }
-    .compare-table th { color: var(--text); font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; }
-    .good { color: var(--success); font-weight: 700; }
+    .compare-table th { color: var(--text); font-size: 13px; text-transform: uppercase; letter-spacing: .08em; }
+    .good { color: var(--success); font-weight: 800; }
     .install-panel { padding: 28px; }
     .install-step { display: grid; grid-template-columns: 42px 1fr; gap: 16px; margin-bottom: 20px; align-items: start; }
     .step-no {
-      width: 42px; height: 42px; border-radius: 50%; background: linear-gradient(135deg, var(--brand), var(--brand-2)); color: #081120;
-      display: flex; align-items: center; justify-content: center; font-weight: 800;
+      width: 42px; height: 42px; border-radius: 50%; background: linear-gradient(135deg, var(--brand), var(--brand-2)); color: #081120; display: flex; align-items: center; justify-content: center; font-weight: 900;
     }
     .install-step h4 { margin: 2px 0 6px; font-size: 18px; }
     .code {
-      display: block; margin-top: 10px; padding: 14px 16px; border-radius: 14px; background: #06101d; border: 1px solid rgba(88, 212, 255, 0.12);
-      color: var(--brand); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 14px; line-height: 1.6; white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere;
+      display: block; margin-top: 10px; padding: 14px 16px; border-radius: 16px; background: color-mix(in srgb, var(--bg) 84%, black 16%);
+      border: 1px solid color-mix(in srgb, var(--brand) 14%, transparent); color: var(--brand);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 14px; line-height: 1.6; white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere;
     }
     .lang-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
     .lang-card { padding: 26px; }
     .lang-card h3 { margin: 0 0 10px; font-size: 22px; }
     .lang-card ul { margin: 16px 0 0; padding-left: 18px; }
-    .lang-card li { margin-bottom: 10px; color: var(--muted); }
-    .final-cta { text-align: center; padding: 80px 0 90px; }
-    .final-cta p { max-width: 760px; margin: 16px auto 28px; color: var(--muted); font-size: 18px; }
+    .lang-card li { margin-bottom: 10px; }
+    .final-cta { text-align: center; padding: 84px 0 96px; }
+    .final-cta p { max-width: 780px; margin: 16px auto 28px; color: var(--muted); font-size: 18px; }
     .button {
-      display: inline-flex; align-items: center; justify-content: center; min-height: 50px; padding: 0 22px; border-radius: 14px; text-decoration: none; font-weight: 700;
+      display: inline-flex; align-items: center; justify-content: center; min-height: 52px; padding: 0 22px; border-radius: 16px; text-decoration: none; font-weight: 800;
       background: linear-gradient(135deg, var(--brand), var(--brand-2)); color: #071120;
+      box-shadow: 0 10px 30px color-mix(in srgb, var(--brand) 24%, transparent);
     }
-    footer { border-top: 1px solid rgba(148,163,184,0.1); padding: 26px 0 40px; color: var(--muted); font-size: 14px; }
+    footer { border-top: 1px solid color-mix(in srgb, var(--line) 90%, transparent); padding: 26px 0 40px; color: var(--muted); font-size: 14px; }
     .footer-inner { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
     @media (max-width: 1000px) {
       .compare-panel, .lang-grid { grid-template-columns: 1fr; }
@@ -163,13 +223,14 @@
     @media (max-width: 640px) {
       .container { width: min(100vw - 28px, 1160px); }
       .header-inner { align-items: flex-start; }
-      .nav { gap: 12px; }
+      .nav { gap: 10px; }
       .grid-4, .grid-3, .proof-row { grid-template-columns: 1fr; }
       .hero { padding-top: 54px; }
-      .hero-center, .card, .install-panel, .lang-card { padding: 22px; }
+      .hero-center, .card, .install-panel, .lang-card, .quote-band { padding: 22px; }
       h1 { font-size: 42px; }
       .hero-lead { font-size: 18px; }
       .install-link { font-size: 14px; }
+      .quote-band blockquote { font-size: 30px; }
     }
   </style>
 </head>
@@ -181,7 +242,8 @@
         <a href="#features">价值</a>
         <a href="#proof">评测</a>
         <a href="#install">安装</a>
-        <a href="#bilingual">中英介绍</a>
+        <a href="./en.html" class="lang-link">EN</a>
+        <button class="toggle" id="themeToggle" type="button">浅色</button>
         <span class="badge">Local-First</span>
       </nav>
     </div>
@@ -196,13 +258,14 @@
           <p class="hero-lead">
             mem8 是为 <strong>OpenClaw</strong> 设计的本地优先记忆层：
             用 <strong>SQLite</strong> 做持久化、用 <strong>Ollama</strong> 做本地 embedding，
-            在跨会话保留记忆的同时，显著压缩上下文成本。<strong>一个很直接的问题是：你愿不愿意把自己的脑子托管在别人的硬盘上？</strong> 如果答案是否定的，那么 local-first 就不只是偏好，而是默认首选。
+            在跨会话保留记忆的同时，显著压缩上下文成本。<strong>你愿不愿意把自己的脑子托管在别人的硬盘上？</strong>
+            如果答案是否定的，那么 local-first 就不只是偏好，而是默认首选。
           </p>
 
           <div class="install-hero">
             <div class="install-hero-label">One-link install for OpenClaw</div>
             <a class="install-link" href="https://raw.githubusercontent.com/philonis/mem8/main/SKILL.md">https://raw.githubusercontent.com/philonis/mem8/main/SKILL.md</a>
-            <div class="install-note">把这个 SKILL.md 链接直接发给 OpenClaw，即可走安装流程。相比 GitHub 页面 URL，raw 链接更适合直接读取内容并执行安装。</div>
+            <div class="install-note">把这个 SKILL.md 链接直接发给 OpenClaw，即可走安装流程。raw 链接更适合直接读取内容并执行安装。</div>
           </div>
 
           <div class="hero-mini">
@@ -213,23 +276,20 @@
           </div>
 
           <div class="proof-row">
-            <div class="proof">
-              <div class="proof-value good">36%+</div>
-              <div class="proof-label">vs transcript 的 Token 节省</div>
-            </div>
-            <div class="proof">
-              <div class="proof-value brand">100%</div>
-              <div class="proof-label">本地存储，数据不离机</div>
-            </div>
-            <div class="proof">
-              <div class="proof-value">91.7%</div>
-              <div class="proof-label">离线样本提取召回率</div>
-            </div>
-            <div class="proof">
-              <div class="proof-value">66.7%</div>
-              <div class="proof-label">当前离线召回命中率</div>
-            </div>
+            <div class="proof"><div class="proof-value good">36%+</div><div class="proof-label">vs transcript 的 Token 节省</div></div>
+            <div class="proof"><div class="proof-value brand">100%</div><div class="proof-label">本地存储，数据不离机</div></div>
+            <div class="proof"><div class="proof-value">91.7%</div><div class="proof-label">离线样本提取召回率</div></div>
+            <div class="proof"><div class="proof-value">66.7%</div><div class="proof-label">当前离线召回命中率</div></div>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="block">
+      <div class="container">
+        <div class="quote-band">
+          <blockquote>如果记忆足够重要，它就不该默认放在别人的硬盘上。</blockquote>
+          <p>这不是一句口号，而是 mem8 的产品前提：记忆需要 persistence，也需要 ownership。</p>
         </div>
       </div>
     </section>
@@ -241,26 +301,10 @@
           <p class="section-desc">把 mem8 最硬的差异化讲透：本地优先、零额外运维、还能直接省 Token。</p>
         </div>
         <div class="grid-4">
-          <article class="card">
-            <div class="card-index">01</div>
-            <h3>本地持久记忆</h3>
-            <p>用 SQLite 做默认后端，跨会话、跨重启保留记忆，不依赖任何云数据库或远程服务。</p>
-          </article>
-          <article class="card">
-            <div class="card-index">02</div>
-            <h3>Token 节省可量化</h3>
-            <p>不是“多一个记忆层”而已。通过结构化召回和记忆压缩，离线 benchmark 已看到约 36% 的 Token 降幅。</p>
-          </article>
-          <article class="card">
-            <div class="card-index">03</div>
-            <h3>零额外运维</h3>
-            <p>没有向量数据库、没有同步脚本、没有远程控制面板。安装完成就能写入、召回和清理记忆。</p>
-          </article>
-          <article class="card">
-            <div class="card-index">04</div>
-            <h3>自动 hygiene</h3>
-            <p>内置相似记忆合并、陈旧噪音清理、compact 优先保留高价值记忆，避免“越用越脏”。</p>
-          </article>
+          <article class="card"><div class="card-index">01</div><h3>本地持久记忆</h3><p>用 SQLite 做默认后端，跨会话、跨重启保留记忆，不依赖任何云数据库或远程服务。</p></article>
+          <article class="card"><div class="card-index">02</div><h3>Token 节省可量化</h3><p>不是“多一个记忆层”而已。通过结构化召回和记忆压缩，离线 benchmark 已看到约 36% 的 Token 降幅。</p></article>
+          <article class="card"><div class="card-index">03</div><h3>零额外运维</h3><p>没有向量数据库、没有同步脚本、没有远程控制面板。安装完成就能写入、召回和清理记忆。</p></article>
+          <article class="card"><div class="card-index">04</div><h3>自动 hygiene</h3><p>内置相似记忆合并、陈旧噪音清理、compact 优先保留高价值记忆，避免“越用越脏”。</p></article>
         </div>
       </div>
     </section>
@@ -275,46 +319,19 @@
           <div class="card">
             <h3>Benchmark 摘要</h3>
             <table class="compare-table">
-              <thead>
-                <tr>
-                  <th>指标</th>
-                  <th>结果</th>
-                  <th>说明</th>
-                </tr>
-              </thead>
+              <thead><tr><th>指标</th><th>结果</th><th>说明</th></tr></thead>
               <tbody>
-                <tr>
-                  <td>Extraction Recall</td>
-                  <td class="good">91.7%</td>
-                  <td>应提取的重要记忆绝大部分能抓到</td>
-                </tr>
-                <tr>
-                  <td>Retrieval Hit Rate</td>
-                  <td>66.7%</td>
-                  <td>当前样本已扩充，更接近真实复杂场景</td>
-                </tr>
-                <tr>
-                  <td>Avg Mem8 Payload</td>
-                  <td>24.3 tokens</td>
-                  <td>组装回上下文的平均载荷更小</td>
-                </tr>
-                <tr>
-                  <td>vs Transcript</td>
-                  <td class="good">20.3% saved</td>
-                  <td>扩样本后依然保持显著节省</td>
-                </tr>
-                <tr>
-                  <td>vs Rule Baseline</td>
-                  <td class="good">13.4% saved</td>
-                  <td>比简单规则基线也更轻</td>
-                </tr>
+                <tr><td>Extraction Recall</td><td class="good">91.7%</td><td>应提取的重要记忆绝大部分能抓到</td></tr>
+                <tr><td>Retrieval Hit Rate</td><td>66.7%</td><td>当前样本已扩充，更接近真实复杂场景</td></tr>
+                <tr><td>Avg Mem8 Payload</td><td>24.3 tokens</td><td>组装回上下文的平均载荷更小</td></tr>
+                <tr><td>vs Transcript</td><td class="good">20.3% saved</td><td>扩样本后依然保持显著节省</td></tr>
+                <tr><td>vs Rule Baseline</td><td class="good">13.4% saved</td><td>比简单规则基线也更轻</td></tr>
               </tbody>
             </table>
           </div>
           <div class="card">
             <h3>为什么这组数据重要？</h3>
-            <p>很多“记忆系统”只能证明自己记住了，却不能证明自己让系统更高效。mem8 的首页应该直接告诉用户：它不只是补齐记忆，更是在降低长期 prompt 成本。</p>
-            <p>这意味着对 OpenClaw 用户来说，收益是双重的：</p>
+            <p>很多“记忆系统”只能证明自己记住了，却不能证明自己让系统更高效。mem8 的价值在于：它不只是补齐记忆，更是在降低长期 prompt 成本。</p>
             <ul>
               <li>长会话更稳，少遗忘</li>
               <li>上下文更轻，少浪费</li>
@@ -329,39 +346,18 @@
       <div class="container">
         <div class="section-head">
           <h2>安装部分尽量简单到“不用解释”</h2>
-          <p class="section-desc">首屏只保留一个安装入口；下面再给补充说明，避免首页按钮太多把注意力打散。</p>
+          <p class="section-desc">首屏只保留一个安装入口；下面再给补充说明，避免按钮太多把注意力打散。</p>
         </div>
         <div class="install-panel">
-          <div class="install-step">
-            <div class="step-no">1</div>
-            <div>
-              <h4>把这个链接发给 OpenClaw</h4>
-              <p>这是最适合作为安装入口的地址：直接返回 SKILL.md 原文，便于 OpenClaw 读取和执行安装流程。</p>
-              <div class="code">https://raw.githubusercontent.com/philonis/mem8/main/SKILL.md</div>
-            </div>
-          </div>
-          <div class="install-step">
-            <div class="step-no">2</div>
-            <div>
-              <h4>如果你要手动安装</h4>
-              <p>只有在特殊网络环境或要手动控制目录时，才需要下面这组命令。</p>
-              <div class="code">git clone https://github.com/philonis/mem8.git ~/.openclaw/plugins/mem8
-cd ~/.openclaw/plugins/mem8 && npm install</div>
-            </div>
-          </div>
-          <div class="install-step" style="margin-bottom:0;">
-            <div class="step-no">3</div>
-            <div>
-              <h4>默认配置即可启动</h4>
-              <p>默认使用 SQLite 和 Ollama，本地目录不存在时会自动创建。首次上线几乎不用额外接线。</p>
-              <div class="code">{
+          <div class="install-step"><div class="step-no">1</div><div><h4>把这个链接发给 OpenClaw</h4><p>这是最适合作为安装入口的地址：直接返回 SKILL.md 原文，便于 OpenClaw 读取和执行安装流程。</p><div class="code">https://raw.githubusercontent.com/philonis/mem8/main/SKILL.md</div></div></div>
+          <div class="install-step"><div class="step-no">2</div><div><h4>如果你要手动安装</h4><p>只有在特殊网络环境或要手动控制目录时，才需要下面这组命令。</p><div class="code">git clone https://github.com/philonis/mem8.git ~/.openclaw/plugins/mem8
+cd ~/.openclaw/plugins/mem8 && npm install</div></div></div>
+          <div class="install-step" style="margin-bottom:0;"><div class="step-no">3</div><div><h4>默认配置即可启动</h4><p>默认使用 SQLite 和 Ollama，本地目录不存在时会自动创建。首次上线几乎不用额外接线。</p><div class="code">{
   "embeddingProvider": "ollama",
   "embeddingModel": "nomic-embed-text:latest",
   "embeddingUrl": "http://127.0.0.1:11434",
   "dbPath": "~/.mem8/memories.sqlite"
-}</div>
-            </div>
-          </div>
+}</div></div></div>
         </div>
       </div>
     </section>
@@ -369,8 +365,8 @@ cd ~/.openclaw/plugins/mem8 && npm install</div>
     <section class="block" id="bilingual">
       <div class="container">
         <div class="section-head">
-          <h2>中英文都能直接拿去发</h2>
-          <p class="section-desc">这个页面不只是主页，也应该是对外介绍页、安装入口页、转发页。</p>
+          <h2>双语网站，不只是双语介绍</h2>
+          <p class="section-desc">这里保留双语摘要，顶部也提供真正的英文独立页面入口。</p>
         </div>
         <div class="lang-grid">
           <div class="lang-card">
@@ -384,7 +380,7 @@ cd ~/.openclaw/plugins/mem8 && npm install</div>
             </ul>
           </div>
           <div class="lang-card">
-            <h3>English Version</h3>
+            <h3>English Summary</h3>
             <p>mem8 is a local-first memory layer for OpenClaw. It persists memory with SQLite, performs local semantic recall with Ollama, and reduces context cost while improving long-session consistency.</p>
             <ul>
               <li>Local-first by default, no cloud dependency</li>
@@ -413,5 +409,23 @@ cd ~/.openclaw/plugins/mem8 && npm install</div>
       <div>MIT License · GitHub: <a href="https://github.com/philonis/mem8">philonis/mem8</a></div>
     </div>
   </footer>
+
+  <script>
+    (function () {
+      const savedTheme = localStorage.getItem('mem8-theme');
+      if (savedTheme === 'light') document.body.classList.add('light');
+      const toggle = document.getElementById('themeToggle');
+      function syncLabel() {
+        toggle.textContent = document.body.classList.contains('light') ? '深色' : '浅色';
+      }
+      syncLabel();
+      toggle.addEventListener('click', function () {
+        document.body.classList.toggle('light');
+        const next = document.body.classList.contains('light') ? 'light' : 'dark';
+        localStorage.setItem('mem8-theme', next);
+        syncLabel();
+      });
+    })();
+  </script>
 </body>
 </html>
