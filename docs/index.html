@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>mem8 - Local-First Memory for OpenClaw</title>
+  <meta name="description" content="mem8 是 OpenClaw 的本地优先记忆插件：SQLite + Ollama，本地持久记忆，约 36% Token 节省。">
+  <style>
+    :root {
+      --bg: #081120;
+      --bg-soft: #0f1c33;
+      --panel: rgba(18, 31, 55, 0.82);
+      --panel-strong: #13233d;
+      --text: #eff6ff;
+      --muted: #9fb2cc;
+      --line: rgba(148, 163, 184, 0.18);
+      --brand: #58d4ff;
+      --brand-2: #6a7dff;
+      --success: #4ade80;
+      --warning: #fbbf24;
+      --shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+      --radius: 22px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(88, 212, 255, 0.16), transparent 28%),
+        radial-gradient(circle at top right, rgba(106, 125, 255, 0.16), transparent 24%),
+        linear-gradient(180deg, #081120 0%, #09162b 100%);
+      color: var(--text);
+      line-height: 1.55;
+    }
+
+    a { color: inherit; }
+    .container { width: min(1160px, calc(100vw - 40px)); margin: 0 auto; }
+
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      backdrop-filter: blur(18px);
+      background: rgba(8, 17, 32, 0.72);
+      border-bottom: 1px solid rgba(148, 163, 184, 0.08);
+    }
+
+    .header-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 16px 0;
+    }
+
+    .logo {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      font-size: 24px;
+    }
+
+    .logo-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--brand), var(--brand-2));
+      box-shadow: 0 0 20px rgba(88, 212, 255, 0.7);
+    }
+
+    .nav {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+
+    .nav a {
+      text-decoration: none;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .nav a:hover { color: var(--text); }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 5px 10px;
+      border-radius: 999px;
+      background: rgba(74, 222, 128, 0.14);
+      border: 1px solid rgba(74, 222, 128, 0.2);
+      color: var(--success);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .hero {
+      padding: 84px 0 56px;
+    }
+
+    .hero-shell {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 28px;
+      align-items: stretch;
+    }
+
+    .hero-main,
+    .hero-side,
+    .card,
+    .install-panel,
+    .metric-strip {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .hero-main {
+      padding: 34px;
+      min-height: 460px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-main::before {
+      content: "";
+      position: absolute;
+      inset: auto -80px -120px auto;
+      width: 260px;
+      height: 260px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(88, 212, 255, 0.22), transparent 68%);
+      pointer-events: none;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--brand);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(40px, 6vw, 74px);
+      line-height: 0.95;
+      letter-spacing: -0.04em;
+    }
+
+    .hero-lead {
+      margin: 22px 0 0;
+      max-width: 700px;
+      color: var(--muted);
+      font-size: 20px;
+    }
+
+    .hero-lead strong {
+      color: var(--text);
+      font-weight: 800;
+    }
+
+    .hero-points {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin: 26px 0 0;
+    }
+
+    .pill {
+      padding: 9px 14px;
+      border-radius: 999px;
+      background: rgba(159, 178, 204, 0.08);
+      border: 1px solid rgba(159, 178, 204, 0.12);
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .cta-row {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-top: 30px;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 50px;
+      padding: 0 22px;
+      border-radius: 14px;
+      text-decoration: none;
+      font-weight: 700;
+      transition: transform 0.18s ease, opacity 0.18s ease, border-color 0.18s ease;
+    }
+
+    .button:hover { transform: translateY(-1px); }
+
+    .button-primary {
+      background: linear-gradient(135deg, var(--brand), var(--brand-2));
+      color: #071120;
+    }
+
+    .button-secondary {
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.02);
+      color: var(--text);
+    }
+
+    .hero-side {
+      padding: 26px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 20px;
+    }
+
+    .hero-side h3,
+    .card h3,
+    .install-panel h3 {
+      margin: 0 0 10px;
+      font-size: 20px;
+    }
+
+    .hero-side p,
+    .card p,
+    .install-panel p,
+    .section-desc,
+    .card li,
+    .install-step p {
+      color: var(--muted);
+    }
+
+    .metric-strip {
+      margin-top: 26px;
+      padding: 18px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+    }
+
+    .metric {
+      padding: 14px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .metric-value {
+      font-size: 30px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+    }
+
+    .metric-value.good { color: var(--success); }
+    .metric-value.brand { color: var(--brand); }
+
+    .metric-label {
+      margin-top: 4px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    section.block {
+      padding: 26px 0 0;
+    }
+
+    .section-head {
+      margin: 0 0 26px;
+      text-align: center;
+    }
+
+    .section-head h2 {
+      margin: 0 0 10px;
+      font-size: clamp(30px, 4vw, 48px);
+      letter-spacing: -0.03em;
+    }
+
+    .section-desc {
+      max-width: 720px;
+      margin: 0 auto;
+      font-size: 17px;
+    }
+
+    .grid-4,
+    .grid-3 {
+      display: grid;
+      gap: 20px;
+    }
+
+    .grid-4 { grid-template-columns: repeat(4, 1fr); }
+    .grid-3 { grid-template-columns: repeat(3, 1fr); }
+
+    .card {
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card-index {
+      color: var(--brand);
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    .card h3 { font-size: 22px; }
+
+    .compare-panel {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 20px;
+    }
+
+    .compare-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 15px;
+    }
+
+    .compare-table th,
+    .compare-table td {
+      padding: 14px 12px;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .compare-table th {
+      color: var(--text);
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .good { color: var(--success); font-weight: 700; }
+    .warn { color: var(--warning); font-weight: 700; }
+
+    .install-panel {
+      padding: 28px;
+    }
+
+    .install-step {
+      display: grid;
+      grid-template-columns: 42px 1fr;
+      gap: 16px;
+      margin-bottom: 20px;
+      align-items: start;
+    }
+
+    .step-no {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--brand), var(--brand-2));
+      color: #081120;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+    }
+
+    .install-step h4 {
+      margin: 2px 0 6px;
+      font-size: 18px;
+    }
+
+    .code {
+      display: block;
+      margin-top: 10px;
+      padding: 14px 16px;
+      border-radius: 14px;
+      background: #06101d;
+      border: 1px solid rgba(88, 212, 255, 0.12);
+      color: var(--brand);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 14px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+    }
+
+    .lang-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .lang-card {
+      padding: 26px;
+      border-radius: var(--radius);
+      border: 1px solid var(--line);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+    }
+
+    .lang-card h3 { margin: 0 0 10px; font-size: 22px; }
+
+    .lang-card ul {
+      margin: 16px 0 0;
+      padding-left: 18px;
+    }
+
+    .lang-card li { margin-bottom: 10px; }
+
+    .final-cta {
+      text-align: center;
+      padding: 80px 0 90px;
+    }
+
+    .final-cta p {
+      max-width: 760px;
+      margin: 16px auto 28px;
+      color: var(--muted);
+      font-size: 18px;
+    }
+
+    footer {
+      border-top: 1px solid rgba(148, 163, 184, 0.1);
+      padding: 26px 0 40px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .footer-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 1000px) {
+      .hero-shell,
+      .compare-panel,
+      .lang-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .grid-4 { grid-template-columns: repeat(2, 1fr); }
+      .metric-strip { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 640px) {
+      .container { width: min(100vw - 28px, 1160px); }
+      .header-inner { align-items: flex-start; }
+      .nav { gap: 12px; }
+      .grid-4,
+      .grid-3,
+      .metric-strip { grid-template-columns: 1fr; }
+      .hero { padding-top: 54px; }
+      .hero-main,
+      .hero-side,
+      .card,
+      .install-panel,
+      .lang-card { padding: 22px; }
+      h1 { font-size: 42px; }
+      .hero-lead { font-size: 18px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="logo" href="#top">
+        <span class="logo-dot"></span>
+        <span>mem8</span>
+      </a>
+      <nav class="nav">
+        <a href="#features">价值</a>
+        <a href="#compare">对比</a>
+        <a href="#install">安装</a>
+        <a href="#bilingual">中英介绍</a>
+        <span class="badge">Local-First</span>
+      </nav>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <div class="container">
+        <div class="hero-shell">
+          <div>
+            <div class="hero-main">
+              <div class="eyebrow">OpenClaw Memory Infrastructure</div>
+              <h1>不只记住<br>还帮你省 Token</h1>
+              <p class="hero-lead">
+                mem8 是为 <strong>OpenClaw</strong> 设计的本地优先记忆层：
+                用 <strong>SQLite</strong> 持久化、用 <strong>Ollama</strong> 做本地 embedding，
+                在跨会话保留记忆的同时，把上下文负担压下来。
+              </p>
+              <div class="hero-points">
+                <span class="pill">纯本地，不上云</span>
+                <span class="pill">约 36% Token 节省</span>
+                <span class="pill">SQLite 持久化</span>
+                <span class="pill">自动去重与清理</span>
+              </div>
+              <div class="cta-row">
+                <a class="button button-primary" href="#install">立即安装</a>
+                <a class="button button-secondary" href="https://github.com/philonis/mem8">查看 GitHub</a>
+              </div>
+            </div>
+            <div class="metric-strip">
+              <div class="metric">
+                <div class="metric-value good">36%+</div>
+                <div class="metric-label">vs transcript 的 Token 节省</div>
+              </div>
+              <div class="metric">
+                <div class="metric-value brand">100%</div>
+                <div class="metric-label">本地存储，数据不离机</div>
+              </div>
+              <div class="metric">
+                <div class="metric-value">SQLite</div>
+                <div class="metric-label">默认持久化引擎</div>
+              </div>
+              <div class="metric">
+                <div class="metric-value">Ollama</div>
+                <div class="metric-label">本地 embedding 与召回</div>
+              </div>
+            </div>
+          </div>
+
+          <aside class="hero-side">
+            <div>
+              <h3>为什么它和 mem9 的感觉类似，但定位更锋利？</h3>
+              <p>
+                mem9 的核心是“记忆基础设施”。mem8 在这个方向上更进一步：
+                <strong>不仅补记忆，还直接节约 Token 成本</strong>。
+                对于本地部署、隐私敏感和长会话代理，收益更直接。
+              </p>
+            </div>
+            <div class="card" style="padding:20px; background: rgba(255,255,255,0.03); box-shadow:none;">
+              <div class="card-index">Core Positioning</div>
+              <h3>Local memory that pays for itself</h3>
+              <p>
+                持久记忆通常只是“多一层能力”。mem8 同时做到两件事：
+                让代理不遗忘，也让 prompt 更瘦。
+              </p>
+            </div>
+            <div class="code">openclaw plugin install https://github.com/philonis/mem8/blob/main/SKILL.md</div>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <section class="block" id="features">
+      <div class="container">
+        <div class="section-head">
+          <h2>四个核心价值，一眼看懂</h2>
+          <p class="section-desc">仿照 mem9 的“基础设施感”，但把 mem8 的独特点拉出来：本地优先、无需运维、可直接省 Token。</p>
+        </div>
+        <div class="grid-4">
+          <article class="card">
+            <div class="card-index">01</div>
+            <h3>本地持久记忆</h3>
+            <p>用 SQLite 做默认后端，跨会话、跨重启保留记忆，不依赖任何云数据库或远程服务。</p>
+          </article>
+          <article class="card">
+            <div class="card-index">02</div>
+            <h3>Token 节省可量化</h3>
+            <p>不是“多一个记忆层”而已。通过结构化召回和记忆压缩，离线 benchmark 已看到约 36% 的 Token 降幅。</p>
+          </article>
+          <article class="card">
+            <div class="card-index">03</div>
+            <h3>零额外运维</h3>
+            <p>没有向量数据库、没有同步脚本、没有远程控制面板。安装完成就能写入、召回和清理记忆。</p>
+          </article>
+          <article class="card">
+            <div class="card-index">04</div>
+            <h3>自动 hygiene</h3>
+            <p>内置相似记忆合并、陈旧噪音清理、compact 优先保留高价值记忆，避免“越用越脏”。</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="block" id="compare">
+      <div class="container">
+        <div class="section-head">
+          <h2>mem8 的优势不止是“记忆”</h2>
+          <p class="section-desc">如果 mem9 解决的是 memory persistence，那么 mem8 解决的是 memory persistence + prompt efficiency。</p>
+        </div>
+        <div class="compare-panel">
+          <div class="card">
+            <h3>价值对比</h3>
+            <table class="compare-table">
+              <thead>
+                <tr>
+                  <th>维度</th>
+                  <th>mem9 风格</th>
+                  <th>mem8</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>记忆持久化</td>
+                  <td class="warn">主打能力</td>
+                  <td class="good">同样支持</td>
+                </tr>
+                <tr>
+                  <td>数据位置</td>
+                  <td>偏云端基础设施</td>
+                  <td class="good">纯本地 SQLite</td>
+                </tr>
+                <tr>
+                  <td>Embedding</td>
+                  <td>依赖外部或服务端</td>
+                  <td class="good">Ollama 本地 embedding</td>
+                </tr>
+                <tr>
+                  <td>Token 成本优化</td>
+                  <td>不是主叙事</td>
+                  <td class="good">核心卖点，约 36% 节省</td>
+                </tr>
+                <tr>
+                  <td>部署复杂度</td>
+                  <td>更像完整基础设施</td>
+                  <td class="good">插件级安装即可用</td>
+                </tr>
+                <tr>
+                  <td>隐私</td>
+                  <td>取决于部署方式</td>
+                  <td class="good">默认不出机器</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="card">
+            <h3>一句话差异化</h3>
+            <p>
+              mem9 让代理“别忘”。<br>
+              <strong>mem8 让代理别忘，而且别浪费。</strong>
+            </p>
+            <p>
+              对 OpenClaw 用户来说，这个差异非常实用：
+              长会话更稳，成本更低，部署更轻，隐私边界更清晰。
+            </p>
+            <div class="hero-points" style="margin-top:18px;">
+              <span class="pill">Memory persistence</span>
+              <span class="pill">Token efficiency</span>
+              <span class="pill">Offline first</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="block" id="install">
+      <div class="container">
+        <div class="section-head">
+          <h2>安装方式尽量做到“一句话讲清”</h2>
+          <p class="section-desc">最好是一个 SKILL.md URL，直接丢给 OpenClaw 就能装，这也是页面里最该醒目的地方。</p>
+        </div>
+        <div class="install-panel">
+          <div class="install-step">
+            <div class="step-no">1</div>
+            <div>
+              <h4>OpenClaw 一键安装</h4>
+              <p>直接把下面这行发给 OpenClaw，即可从 GitHub 安装插件。</p>
+              <div class="code">openclaw plugin install https://github.com/philonis/mem8/blob/main/SKILL.md</div>
+            </div>
+          </div>
+          <div class="install-step">
+            <div class="step-no">2</div>
+            <div>
+              <h4>手动安装</h4>
+              <p>如果你想自己控制目录和依赖，也可以直接克隆。</p>
+              <div class="code">git clone https://github.com/philonis/mem8.git ~/.openclaw/plugins/mem8
+cd ~/.openclaw/plugins/mem8 && npm install</div>
+            </div>
+          </div>
+          <div class="install-step" style="margin-bottom:0;">
+            <div class="step-no">3</div>
+            <div>
+              <h4>默认配置即可启动</h4>
+              <p>默认使用 SQLite 和 Ollama，本地目录不存在时会自动创建。首次上线几乎不用额外接线。</p>
+              <div class="code">{
+  "embeddingProvider": "ollama",
+  "embeddingModel": "nomic-embed-text:latest",
+  "embeddingUrl": "http://127.0.0.1:11434",
+  "dbPath": "~/.mem8/memories.sqlite"
+}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="block" id="bilingual">
+      <div class="container">
+        <div class="section-head">
+          <h2>中英文都能直接拿去用</h2>
+          <p class="section-desc">静态页不仅是主页，也应该能直接当对外介绍页和安装入口页。</p>
+        </div>
+        <div class="lang-grid">
+          <div class="lang-card">
+            <h3>中文版本</h3>
+            <p>mem8 是 OpenClaw 的本地优先记忆插件，用 SQLite 做持久化、用 Ollama 做本地 embedding，在提升长期记忆能力的同时，显著降低 Token 消耗。</p>
+            <ul>
+              <li>纯本地，不依赖云端基础设施</li>
+              <li>长会话更稳，跨重启记忆不丢</li>
+              <li>离线 benchmark 已看到约 36% Token 节省</li>
+              <li>支持 SKILL.md 一键安装</li>
+            </ul>
+          </div>
+          <div class="lang-card">
+            <h3>English Version</h3>
+            <p>mem8 is a local-first memory layer for OpenClaw. It persists memory with SQLite, performs local semantic recall with Ollama, and reduces context cost while improving long-session consistency.</p>
+            <ul>
+              <li>Local-first by default, no cloud dependency</li>
+              <li>Persistent memory across restarts and sessions</li>
+              <li>Roughly 36% token savings in offline benchmarks</li>
+              <li>Installable through a single SKILL.md URL</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="final-cta">
+      <div class="container">
+        <div class="eyebrow" style="justify-content:center; width:100%;">Ready to Install</div>
+        <h2 style="margin:0; font-size: clamp(34px, 4.5vw, 58px); letter-spacing:-0.04em;">让 OpenClaw 记得更多，花得更少</h2>
+        <p>如果你喜欢 mem9 那种“基础设施级”的感觉，mem8 会更适合本地用户：页面同样有冲击力，但叙事更务实，价值更直接。</p>
+        <div class="cta-row" style="justify-content:center;">
+          <a class="button button-primary" href="https://github.com/philonis/mem8/blob/main/SKILL.md">查看 SKILL.md</a>
+          <a class="button button-secondary" href="https://github.com/philonis/mem8">查看仓库</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container footer-inner">
+      <div>mem8 · Local-First Memory for OpenClaw</div>
+      <div>MIT License · GitHub: <a href="https://github.com/philonis/mem8">philonis/mem8</a></div>
+    </div>
+  </footer>
+</body>
+</html>
