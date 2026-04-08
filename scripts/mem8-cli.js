@@ -33,7 +33,6 @@ function printTable(rows) {
     console.log('(no memories)');
     return;
   }
-
   for (const row of rows) {
     const preview = row.content.length > 100 ? `${row.content.slice(0, 97)}...` : row.content;
     console.log(`${row.id} | ${row.scope}/${row.type} | imp=${row.importance.toFixed(2)} conf=${row.confidence.toFixed(2)} emb=${row.embedding && row.embedding.length ? 'yes' : 'no'}`);
@@ -68,12 +67,10 @@ async function statsCommand(options) {
     byScope: {},
     byType: {}
   };
-
   for (const row of rows) {
     stats.byScope[row.scope] = (stats.byScope[row.scope] || 0) + 1;
     stats.byType[row.type] = (stats.byType[row.type] || 0) + 1;
   }
-
   console.log(JSON.stringify(stats, null, 2));
   await store.close();
 }
@@ -83,7 +80,6 @@ async function recallCommand(options) {
   if (!queryText) {
     throw new Error('recall requires --query');
   }
-
   const store = makeStore(options);
   const provider = options.semantic === 'true'
     ? new OllamaEmbeddingProvider({
@@ -98,46 +94,63 @@ async function recallCommand(options) {
     projectId: options.project,
     scope: options.scope,
     type: options.type,
-    limit: options.limit ? Number(options.limit) : 50
+    limit: options.top ? Number(options.top) : 20
   });
-  const ranked = options.semantic === 'true'
-    ? await ranker.rankSemantic(rows, queryText)
-    : ranker.rank(rows, queryText);
-  printTable(ranked.slice(0, options.top ? Number(options.top) : 10));
+  if (rows.length === 0) {
+    console.log('(no results)');
+    await store.close();
+    return;
+  }
+  const ranked = await ranker.rank(rows, queryText);
+  printTable(ranked.slice(0, options.top ? Number(options.top) : 20));
   await store.close();
 }
 
 async function showCommand(options) {
-  const id = options.id || options._id;
-  if (!id) {
+  if (!options.id) {
     throw new Error('show requires --id');
   }
   const store = makeStore(options);
-  const row = await store.getById(id);
-  if (!row) {
+  const rows = await store.query({ id: options.id, limit: 1 });
+  if (rows.length === 0) {
     console.log('(not found)');
   } else {
-    console.log(JSON.stringify(row, null, 2));
+    console.log(JSON.stringify(rows[0], null, 2));
   }
   await store.close();
 }
 
 async function deleteCommand(options) {
-  const id = options.id || options._id;
-  if (!id) {
+  if (!options.id) {
     throw new Error('delete requires --id');
   }
   const store = makeStore(options);
-  const ok = await store.delete(id);
-  console.log(ok ? `deleted ${id}` : `(not found) ${id}`);
+  await store.delete(options.id);
+  console.log('deleted');
   await store.close();
 }
 
 async function dumpCommand(options) {
   const store = makeStore(options);
-  const rows = await store.query({ limit: 100000, scope: options.scope, type: options.type, sessionId: options.session, userId: options.user, projectId: options.project });
+  const query = {
+    scope: options.scope,
+    type: options.type,
+    sessionId: options.session,
+    userId: options.user,
+    projectId: options.project,
+    limit: 100000
+  };
+  const rows = await store.query(query);
   console.log(JSON.stringify(rows, null, 2));
   await store.close();
+}
+
+async function healthCommand(options) {
+  const { Mem8Config, DEFAULT_CONFIG } = require('../dist/config.js');
+  const { checkHealth } = require('../dist/plugin-health.js');
+  const config = { ...DEFAULT_CONFIG, dbPath: resolveDbPath(options.db) };
+  const health = checkHealth(config);
+  console.log(JSON.stringify(health, null, 2));
 }
 
 function help() {
@@ -152,6 +165,7 @@ Commands:
   show   [--db <path>] --id <memory-id>
   delete [--db <path>] --id <memory-id>
   dump   [--db <path>] [--scope <scope>] [--type <type>] [--session <id>] [--user <id>] [--project <id>]
+  health [--db <path>]
 `);
 }
 
@@ -161,17 +175,27 @@ async function main() {
     help();
     return;
   }
-  if (command === 'list') return listCommand(options);
-  if (command === 'stats') return statsCommand(options);
-  if (command === 'recall') return recallCommand(options);
-  if (command === 'show') return showCommand(options);
-  if (command === 'delete') return deleteCommand(options);
-  if (command === 'dump') return dumpCommand(options);
-  help();
-  process.exitCode = 1;
+  const commands = {
+    list: listCommand,
+    stats: statsCommand,
+    recall: recallCommand,
+    show: showCommand,
+    delete: deleteCommand,
+    dump: dumpCommand,
+    health: healthCommand
+  };
+  const fn = commands[command];
+  if (!fn) {
+    help();
+    process.exitCode = 1;
+    return;
+  }
+  try {
+    await fn(options);
+  } catch (err) {
+    console.error(err.message || err);
+    process.exit(1);
+  }
 }
 
-main().catch((error) => {
-  console.error(error.message || error);
-  process.exit(1);
-});
+main();

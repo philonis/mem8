@@ -15,13 +15,23 @@
         {
           "scope": "user",
           "type": "preference",
-          "contentIncludes": ["prefer concise bullet-point answers", "short and scannable summaries"]
+          "contentIncludes": [
+            "prefer concise bullet-point answers",
+            "short and scannable summaries"
+          ]
         }
       ],
       "queries": [
         {
           "query": "What response style does the user want?",
-          "expected": { "scope": "user", "type": "preference", "contentIncludes": ["concise", "bullet"] }
+          "expected": {
+            "scope": "user",
+            "type": "preference",
+            "contentIncludes": [
+              "concise",
+              "bullet"
+            ]
+          }
         }
       ]
     },
@@ -38,27 +48,48 @@
         {
           "scope": "project",
           "type": "decision",
-          "contentIncludes": ["SQLite", "default store"]
+          "contentIncludes": [
+            "SQLite",
+            "default store"
+          ]
         },
         {
           "scope": "session",
           "type": "task",
-          "contentIncludes": ["improve retrieval quality", "semantic ranking"]
+          "contentIncludes": [
+            "improve retrieval quality",
+            "semantic ranking"
+          ]
         },
         {
           "scope": "project",
           "type": "fact",
-          "contentIncludes": ["local-first", "avoid cloud sync"]
+          "contentIncludes": [
+            "local-first",
+            "avoid cloud sync"
+          ]
         }
       ],
       "queries": [
         {
           "query": "What storage choice did we settle on for mem8?",
-          "expected": { "scope": "project", "type": "decision", "contentIncludes": ["SQLite"] }
+          "expected": {
+            "scope": "project",
+            "type": "decision",
+            "contentIncludes": [
+              "SQLite"
+            ]
+          }
         },
         {
           "query": "What is the next step for retrieval?",
-          "expected": { "scope": "session", "type": "task", "contentIncludes": ["semantic ranking"] }
+          "expected": {
+            "scope": "session",
+            "type": "task",
+            "contentIncludes": [
+              "semantic ranking"
+            ]
+          }
         }
       ]
     },
@@ -66,28 +97,164 @@
       "id": "noise-1",
       "description": "Chat noise should not dominate memory output.",
       "conversation": [
-        "好的。",
-        "谢谢。",
-        "mem8 必须保持本地优先，不能依赖云同步。",
-        "收到。",
-        "下一步要做离线 benchmark 和对比报告。"
+        "\u597d\u7684\u3002",
+        "\u8c22\u8c22\u3002",
+        "mem8 \u5fc5\u987b\u4fdd\u6301\u672c\u5730\u4f18\u5148\uff0c\u4e0d\u80fd\u4f9d\u8d56\u4e91\u540c\u6b65\u3002",
+        "\u6536\u5230\u3002",
+        "\u4e0b\u4e00\u6b65\u8981\u505a\u79bb\u7ebf benchmark \u548c\u5bf9\u6bd4\u62a5\u544a\u3002"
       ],
       "expectedMemories": [
         {
           "scope": "project",
           "type": "fact",
-          "contentIncludes": ["本地优先", "云同步"]
+          "contentIncludes": [
+            "\u672c\u5730\u4f18\u5148",
+            "\u4e91\u540c\u6b65"
+          ]
         },
         {
           "scope": "session",
           "type": "task",
-          "contentIncludes": ["离线 benchmark", "对比报告"]
+          "contentIncludes": [
+            "\u79bb\u7ebf benchmark",
+            "\u5bf9\u6bd4\u62a5\u544a"
+          ]
         }
       ],
       "queries": [
         {
           "query": "What principle should mem8 follow?",
-          "expected": { "scope": "project", "type": "fact", "contentIncludes": ["本地优先"] }
+          "expected": {
+            "scope": "project",
+            "type": "fact",
+            "contentIncludes": [
+              "\u672c\u5730\u4f18\u5148"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "multi-update-1",
+      "description": "Multiple updates to the same memory should merge correctly.",
+      "conversation": [
+        "I like concise answers.",
+        "Actually, I prefer concise bullet points.",
+        "And concise summaries."
+      ],
+      "expectedMemories": [
+        {
+          "scope": "user",
+          "type": "preference",
+          "contentIncludes": [
+            "concise",
+            "bullet points",
+            "summaries"
+          ]
+        }
+      ],
+      "queries": [
+        {
+          "query": "What is the user's preference for answers?",
+          "expected": {
+            "scope": "user",
+            "type": "preference",
+            "contentIncludes": [
+              "concise",
+              "bullet points",
+              "summaries"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "conflicting-notes-1",
+      "description": "Conflicting notes should be handled, preferring higher confidence/importance.",
+      "conversation": [
+        "Project mem8 has feature X.",
+        "Actually, project mem8 does NOT have feature X, it was removed.",
+        "Project mem8 has feature Y."
+      ],
+      "expectedMemories": [
+        {
+          "scope": "project",
+          "type": "fact",
+          "contentIncludes": [
+            "Project mem8 has feature Y"
+          ]
+        },
+        {
+          "scope": "project",
+          "type": "fact",
+          "contentIncludes": [
+            "NOT have feature X",
+            "removed"
+          ]
+        }
+      ],
+      "queries": [
+        {
+          "query": "What can you tell me about feature X in mem8?",
+          "expected": {
+            "scope": "project",
+            "type": "fact",
+            "contentIncludes": [
+              "NOT have feature X",
+              "removed"
+            ]
+          }
+        },
+        {
+          "query": "What about feature Y?",
+          "expected": {
+            "scope": "project",
+            "type": "fact",
+            "contentIncludes": [
+              "Project mem8 has feature Y"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "stale-cleanup-1",
+      "description": "Stale session tasks should be pruned within user/project preferences.",
+      "conversation": [
+        "I need to implement feature Z.",
+        "Let's do that later.",
+        "Now, about mem8's architecture..."
+      ],
+      "expectedMemories": [
+        {
+          "scope": "user",
+          "type": "preference",
+          "contentIncludes": [
+            "concise",
+            "bullet points",
+            "summaries"
+          ]
+        },
+        {
+          "scope": "project",
+          "type": "fact",
+          "contentIncludes": [
+            "mem8's architecture"
+          ]
+        }
+      ],
+      "queries": [
+        {
+          "query": "What tasks do we have?",
+          "expected": {
+            "scope": "user",
+            "type": "preference",
+            "contentIncludes": [
+              "concise",
+              "bullet points",
+              "summaries"
+            ]
+          }
         }
       ]
     }

@@ -19,8 +19,8 @@ test('offline benchmark generates json and markdown reports', () => {
   assert.ok(fs.existsSync(parsed.mdPath));
 
   const md = fs.readFileSync(parsed.mdPath, 'utf8');
-  assert.match(md, /Comparison Table/);
-  assert.match(md, /Token savings vs transcript baseline/);
+  assert.match(md, /对比表格/);
+  assert.match(md, /Token 节省/);
 
   fs.rmSync(outDir, { recursive: true, force: true });
 });

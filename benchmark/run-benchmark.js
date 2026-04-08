@@ -164,45 +164,45 @@ function buildReport(datasetName, results) {
   };
 
   const lines = [];
-  lines.push(`# ${datasetName} Report`);
+  lines.push(`# ${datasetName} 评测报告`);
   lines.push('');
-  lines.push('## Executive Summary');
+  lines.push('## 核心指标摘要');
   lines.push('');
-  lines.push(`- Extraction precision: ${formatPct(overall.extractionPrecision)}`);
-  lines.push(`- Extraction recall: ${formatPct(overall.extractionRecall)}`);
-  lines.push(`- Retrieval hit rate: ${formatPct(overall.retrievalHitRate)}`);
-  lines.push(`- Avg payload tokens (transcript baseline): ${overall.avgTranscriptTokens.toFixed(1)}`);
-  lines.push(`- Avg payload tokens (rule baseline): ${overall.avgBaselineTokens.toFixed(1)}`);
-  lines.push(`- Avg payload tokens (mem8): ${overall.avgMem8Tokens.toFixed(1)}`);
-  lines.push(`- Token savings vs transcript baseline: ${formatPct(overall.savingsVsTranscript)}`);
-  lines.push(`- Token savings vs rule baseline: ${formatPct(overall.savingsVsBaseline)}`);
+  lines.push(`- 提取准确率: ${formatPct(overall.extractionPrecision)}`);
+  lines.push(`- 提取召回率: ${formatPct(overall.extractionRecall)}`);
+  lines.push(`- 召回命中率: ${formatPct(overall.retrievalHitRate)}`);
+  lines.push(`- 平均 Token 消耗 (原始对话): ${overall.avgTranscriptTokens.toFixed(1)}`);
+  lines.push(`- 平均 Token 消耗 (规则基线): ${overall.avgBaselineTokens.toFixed(1)}`);
+  lines.push(`- 平均 Token 消耗 (mem8): ${overall.avgMem8Tokens.toFixed(1)}`);
+  lines.push(`- Token 节省 (vs 原始对话): ${formatPct(overall.savingsVsTranscript)}`);
+  lines.push(`- Token 节省 (vs 规则基线): ${formatPct(overall.savingsVsBaseline)}`);
   lines.push('');
-  lines.push('## Comparison Table');
+  lines.push('## 对比表格');
   lines.push('');
-  lines.push('| Case | Extraction Recall | Retrieval Hit Rate | Transcript Tokens | Baseline Tokens | mem8 Tokens | Savings vs Transcript |');
+  lines.push('| 测试用例 | 提取召回率 | 召回命中率 | 原始对话 Token | 规则基线 Token | mem8 Token | Token 节省 |');
   lines.push('| --- | ---: | ---: | ---: | ---: | ---: | ---: |');
   for (const result of results) {
     lines.push(`| ${result.id} | ${formatPct(result.extraction.recall)} | ${formatPct(result.retrieval.hitRate)} | ${result.tokens.avgTranscriptTokens.toFixed(1)} | ${result.tokens.avgBaselineTokens.toFixed(1)} | ${result.tokens.avgMem8Tokens.toFixed(1)} | ${formatPct(result.tokens.savingsVsTranscript)} |`);
   }
   lines.push('');
-  lines.push('## User-Facing Value');
+  lines.push('## 核心价值');
   lines.push('');
-  lines.push('- mem8 converts noisy multi-turn conversation into compact structured memory.');
-  lines.push('- In this offline benchmark, mem8 preserves the key user/project/task signals while reducing prompt payload size.');
-  lines.push('- The result is a stronger long-context memory layer with lower token overhead than replaying transcript-heavy context.');
+  lines.push('- **记忆提纯**: 将多轮噪声对话转化为结构化紧凑 memory');
+  lines.push('- **Token 节省**: 保留关键用户偏好/项目决策的同时，大幅降低上下文 payload 大小');
+  lines.push('- **更强上下文**: 比传统 transcript 重放方式拥有更低 token 开销的记忆层');
   lines.push('');
-  lines.push('## Per-Case Notes');
+  lines.push('## 各用例详细结果');
   lines.push('');
   for (const result of results) {
     lines.push(`### ${result.id}`);
     lines.push(`- ${result.description}`);
-    lines.push(`- Extraction: ${result.extraction.hits}/${result.extraction.expected} matched expected memories`);
-    lines.push(`- Retrieval hit rate: ${formatPct(result.retrieval.hitRate)}`);
+    lines.push(`- 提取结果: ${result.extraction.hits}/${result.extraction.expected} 条匹配预期 memory`);
+    lines.push(`- 召回命中率: ${formatPct(result.retrieval.hitRate)}`);
     for (const detail of result.retrieval.details) {
-      lines.push(`- Query: ${detail.query}`);
-      lines.push(`  - Hit: ${detail.hit ? 'yes' : 'no'}`);
-      lines.push(`  - Top result: ${detail.topHit ? `${detail.topHit.scope}/${detail.topHit.type} - ${detail.topHit.content}` : '(none)'}`);
-      lines.push(`  - Tokens: transcript=${detail.transcriptTokens}, baseline=${detail.baselineTokens}, mem8=${detail.mem8Tokens}`);
+      lines.push(`- 查询: ${detail.query}`);
+      lines.push(`  - 命中: ${detail.hit ? '是' : '否'}`);
+      lines.push(`  - 最高结果: ${detail.topHit ? detail.topHit.scope + '/' + detail.topHit.type + ' - ' + detail.topHit.content : '(无)'}`);
+      lines.push(`  - Token: 原始=${detail.transcriptTokens}, 规则=${detail.baselineTokens}, mem8=${detail.mem8Tokens}`);
     }
     lines.push('');
   }
