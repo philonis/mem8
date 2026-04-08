@@ -1,0 +1,41 @@
+{
+  "name": "mem8",
+  "version": "0.1.0",
+  "description": "OpenClaw Memory Plugin - ContextEngine based persistent memory",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "demo": "npm run build && node scripts/demo-semantic-recall.js",
+    "mem": "npm run build && node scripts/mem8-cli.js",
+    "benchmark": "npm run build && node benchmark/run-benchmark.js",
+    "test": "npm run build && node --test test/*.test.js",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "openclaw",
+    "memory",
+    "context-engine",
+    "ai"
+  ],
+  "openclaw": {
+    "plugin": true,
+    "slots": [
+      "memory"
+    ],
+    "entries": [
+      "mem8"
+    ]
+  },
+  "dependencies": {
+    "sql.js": "^1.13.0",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/sql.js": "^1.4.11",
+    "@types/uuid": "^9.0.7",
+    "typescript": "^5.3.3"
+  }
+}

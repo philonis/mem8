@@ -1,0 +1,16 @@
+{
+  "name": "mem8",
+  "version": "0.1.0",
+  "description": "OpenClaw Memory Plugin - ContextEngine based persistent memory",
+  "author": "",
+  "license": "MIT",
+  "homepage": "https://github.com/your-repo/mem8",
+  "openclaw": {
+    "plugin": true,
+    "pluginApiVersion": "1.0.0",
+    "slots": ["memory"],
+    "entries": ["mem8"],
+    "contextEngine": true
+  },
+  "keywords": ["openclaw", "memory", "context-engine", "ai", "plugin"]
+}

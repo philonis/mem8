@@ -1,0 +1,95 @@
+{
+  "name": "mem8 local memory benchmark",
+  "cases": [
+    {
+      "id": "pref-1",
+      "description": "User preference survives noisy turns and should be recalled compactly.",
+      "conversation": [
+        "I prefer concise bullet-point answers instead of long narrative reports.",
+        "Okay thanks.",
+        "By the way, for mem8 we should keep things local-first.",
+        "Hello.",
+        "Please remember I like short and scannable summaries."
+      ],
+      "expectedMemories": [
+        {
+          "scope": "user",
+          "type": "preference",
+          "contentIncludes": ["prefer concise bullet-point answers", "short and scannable summaries"]
+        }
+      ],
+      "queries": [
+        {
+          "query": "What response style does the user want?",
+          "expected": { "scope": "user", "type": "preference", "contentIncludes": ["concise", "bullet"] }
+        }
+      ]
+    },
+    {
+      "id": "decision-1",
+      "description": "Project decision should outrank weaker session notes.",
+      "conversation": [
+        "We decided to use SQLite as the default store for mem8.",
+        "There was also a minor short-lived note about a draft folder name.",
+        "Next step is to improve retrieval quality with semantic ranking.",
+        "The project architecture must remain local-first and avoid cloud sync."
+      ],
+      "expectedMemories": [
+        {
+          "scope": "project",
+          "type": "decision",
+          "contentIncludes": ["SQLite", "default store"]
+        },
+        {
+          "scope": "session",
+          "type": "task",
+          "contentIncludes": ["improve retrieval quality", "semantic ranking"]
+        },
+        {
+          "scope": "project",
+          "type": "fact",
+          "contentIncludes": ["local-first", "avoid cloud sync"]
+        }
+      ],
+      "queries": [
+        {
+          "query": "What storage choice did we settle on for mem8?",
+          "expected": { "scope": "project", "type": "decision", "contentIncludes": ["SQLite"] }
+        },
+        {
+          "query": "What is the next step for retrieval?",
+          "expected": { "scope": "session", "type": "task", "contentIncludes": ["semantic ranking"] }
+        }
+      ]
+    },
+    {
+      "id": "noise-1",
+      "description": "Chat noise should not dominate memory output.",
+      "conversation": [
+        "好的。",
+        "谢谢。",
+        "mem8 必须保持本地优先，不能依赖云同步。",
+        "收到。",
+        "下一步要做离线 benchmark 和对比报告。"
+      ],
+      "expectedMemories": [
+        {
+          "scope": "project",
+          "type": "fact",
+          "contentIncludes": ["本地优先", "云同步"]
+        },
+        {
+          "scope": "session",
+          "type": "task",
+          "contentIncludes": ["离线 benchmark", "对比报告"]
+        }
+      ],
+      "queries": [
+        {
+          "query": "What principle should mem8 follow?",
+          "expected": { "scope": "project", "type": "fact", "contentIncludes": ["本地优先"] }
+        }
+      ]
+    }
+  ]
+}
