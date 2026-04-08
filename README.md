@@ -1,61 +1,93 @@
-# mem8
+# mem8 - Local-First Memory Plugin for OpenClaw
 
-OpenClaw Memory Plugin - ContextEngine based persistent memory for AI assistants.
-
-## Overview
-
-mem8 is a memory plugin for OpenClaw that provides persistent, cross-session memory management using the OpenClaw 3.8+ ContextEngine interface.
+Pure local-first persistent memory plugin using OpenClaw 3.8+ ContextEngine interface.
 
 ## Features
 
-- **Bootstrap** - Session startup memory restoration
-- **Assemble** - Dynamic prompt assembly with relevant memories
-- **Ingest** - Automatic memory extraction from conversations
-- **Compact** - Intelligent memory compression when tokens are limited
-- **Subagent Support** - Context inheritance and result回流 for subagents
+- **Local embedding**: Ollama with `nomic-embed-text` model
+- **SQLite storage**: Default at `~/.mem8/memories.sqlite`
+- **Structured memory**: Scope (`session/user/project`) + Type (`preference/decision/task/fact`)
+- **Memory hygiene**: Auto-merge duplicates, stale cleanup, compact pruning
+- **Offline benchmark**: Built-in evaluation framework
 
 ## Installation
 
 ```bash
-cd ~/mem8
+cd ~/.openclaw/plugins
+git clone https://github.com/philonis/mem8.git
+cd mem8
 npm install
-npm run build
 ```
 
 ## Configuration
 
-Add to your `openclaw.json`:
+Default config (env or config file):
+
+```json
+{
+  "dbPath": "~/.mem8/memories.sqlite",
+  "embeddingProvider": "ollama",
+  "embeddingModel": "nomic-embed-text:latest",
+  "embeddingUrl": "http://127.0.0.1:11434",
+  "maxTokensPerAssemble": 500,
+  "debug": false
+}
+```
+
+## Usage
+
+### CLI
+
+```bash
+# List memories
+npm run mem -- list
+
+# Stats
+npm run mem -- stats
+
+# Recall with query
+npm run mem -- recall "what did I prefer?"
+
+# Show memory details
+npm run mem -- show <id>
+
+# Delete memory
+npm run mem -- delete <id>
+
+# Dump all
+npm run mem -- dump
+```
+
+### Benchmark
+
+```bash
+npm run benchmark
+```
+
+Output in `benchmark/output/`.
+
+## OpenClaw Plugin
+
+Load via config:
 
 ```json
 {
   "plugins": {
-    "slots": {
-      "memory": "mem8"
-    },
     "entries": {
-      "mem8": {
-        "enabled": true,
-        "config": {
-          "apiUrl": "https://api.mem9.ai",
-          "dbPath": "~/.mem8/memories.db",
-          "debug": false
-        }
-      }
-    },
-    "allow": ["mem8"]
+      "memory": "mem8"
+    }
   }
 }
 ```
 
 ## Architecture
 
-```
-src/
-├── index.ts           # Plugin entry point
-├── context-engine.ts  # ContextEngine implementation
-├── memory-store.ts    # SQLite storage layer
-└── types.ts           # TypeScript type definitions
-```
+- `src/context-engine.ts` - Main ContextEngine implementation
+- `src/memory-extractor.ts` - Rule-based memory extraction
+- `src/memory-ranker.ts` - Heuristic + semantic ranking
+- `src/memory-hygiene.ts` - Merge/cleanup/pruning
+- `src/memory-store.ts` - Dual-repository (JSON + SQLite)
+- `src/embedding-provider.ts` - Ollama embedding
 
 ## License
 
