@@ -96,3 +96,58 @@ test('mem8 CLI recall supports semantic mode when Ollama is available', () => {
 
   fs.rmSync(dir, { recursive: true, force: true });
 });
+
+test('mem8 CLI exposes status, search, and get commands for inspectable memory', () => {
+  const { dir, dbPath } = makeDbPath();
+  const seed = {
+    version: 2,
+    memories: [
+      {
+        id: '123e4567-e89b-12d3-a456-426614174000',
+        scope: 'project',
+        type: 'decision',
+        projectId: 'p1',
+        content: 'Keep mem8 local-first, inspectable, and easy to debug from the CLI.',
+        summary: 'Keep mem8 inspectable.',
+        importance: 0.97,
+        freshness: 0.92,
+        confidence: 0.9,
+        source: 'conversation',
+        createdAt: 1,
+        updatedAt: 1
+      }
+    ]
+  };
+  fs.writeFileSync(path.join(dir, 'memories.json'), JSON.stringify(seed, null, 2));
+
+  const statusOut = execFileSync('node', ['scripts/mem8-cli.js', 'status', '--db', dbPath, '--embeddingProvider', 'none'], {
+    cwd: '/Users/qihoo/mem8',
+    encoding: 'utf8'
+  });
+  assert.match(statusOut, /"memoryCount": 1/);
+  assert.match(statusOut, /"embeddingAvailable": false/);
+
+  const searchOut = execFileSync(
+    'node',
+    ['scripts/mem8-cli.js', 'search', '--db', dbPath, '--query', 'inspectable local-first', '--embeddingProvider', 'none'],
+    {
+      cwd: '/Users/qihoo/mem8',
+      encoding: 'utf8'
+    }
+  );
+  assert.match(searchOut, /"path": "memory\/project\/p1\/123e4567-e89b-12d3-a456-426614174000\.md"/);
+  assert.match(searchOut, /"citation": "memory\/project\/p1\/123e4567-e89b-12d3-a456-426614174000\.md#L/);
+
+  const getOut = execFileSync(
+    'node',
+    ['scripts/mem8-cli.js', 'get', '--db', dbPath, '--path', 'memory/project/p1/123e4567-e89b-12d3-a456-426614174000.md', '--embeddingProvider', 'none'],
+    {
+      cwd: '/Users/qihoo/mem8',
+      encoding: 'utf8'
+    }
+  );
+  assert.match(getOut, /"found": true/);
+  assert.match(getOut, /Keep mem8 local-first/);
+
+  fs.rmSync(dir, { recursive: true, force: true });
+});

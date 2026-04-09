@@ -151,6 +151,7 @@ export class JsonMemoryRepository implements MemoryRepository {
   query(query: MemoryQuery): MemoryRecord[] {
     let results = [...this.db.memories];
 
+    if (query.id) results = results.filter((memory) => memory.id === query.id);
     if (query.scope) results = results.filter((memory) => memory.scope === query.scope);
     if (query.type) results = results.filter((memory) => memory.type === query.type);
     if (query.sessionId) results = results.filter((memory) => memory.sessionId === query.sessionId);

@@ -1,0 +1,39 @@
+{
+  "id": "mem8",
+  "name": "mem8",
+  "description": "Local-first persistent memory and context engine for OpenClaw with SQLite storage, Ollama embeddings, and token-efficient recall.",
+  "kind": "memory",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "dbPath": {
+        "type": "string",
+        "description": "SQLite database path for mem8 storage."
+      },
+      "embeddingProvider": {
+        "type": "string",
+        "enum": ["ollama", "none"],
+        "description": "Embedding provider for semantic recall."
+      },
+      "embeddingModel": {
+        "type": "string",
+        "description": "Embedding model id, usually nomic-embed-text:latest."
+      },
+      "embeddingUrl": {
+        "type": "string",
+        "description": "Base URL for the local Ollama server."
+      },
+      "maxTokensPerAssemble": {
+        "type": "number",
+        "minimum": 50,
+        "maximum": 5000,
+        "description": "Maximum token budget for assembled memory payloads."
+      },
+      "debug": {
+        "type": "boolean",
+        "description": "Enable verbose debug logging."
+      }
+    }
+  }
+}

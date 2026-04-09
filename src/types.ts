@@ -12,6 +12,7 @@ export interface Mem8Config {
   embeddingProvider?: 'none' | 'ollama';
   embeddingModel?: string;
   embeddingBaseUrl?: string;
+  maxTokensPerAssemble?: number;
 }
 
 export interface MemoryRecord {
@@ -55,6 +56,7 @@ export interface MemoryRecordInput {
 }
 
 export interface MemoryQuery {
+  id?: string;
   scope?: MemoryScope;
   type?: MemoryType;
   sessionId?: string;

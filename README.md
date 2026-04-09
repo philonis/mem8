@@ -53,13 +53,12 @@ openclaw restart
 ### 🎤 CLI
 
 ```bash
-npm run mem -- list          # list stored memories
-npm run mem -- stats       # statistics (by scope/type)
-npm run mem -- recall "what do I prefer?"  # semantic recall
-npm run mem -- health    # health check
-npm run mem -- show <id> # show memory details
-npm run mem -- delete <id> # delete memory
-npm run mem -- dump     # export all as JSON
+npm run mem -- status                                    # memory/index status
+npm run mem -- index --force true                        # backfill embeddings
+npm run mem -- search --query "what do I prefer?"       # snippet-style recall
+npm run mem -- get --path memory/user/u1/<id>.md        # inspect one memory
+npm run mem -- list                                      # legacy table view
+npm run mem -- health                                    # health check
 ```
 
 ### 🧪 Benchmark
@@ -134,13 +133,12 @@ openclaw restart
 ### 🎤 CLI
 
 ```bash
-npm run mem -- list           # 列出记忆
-npm run mem -- stats        # 统计（按 scope/type）
-npm run mem -- recall "我的偏好是什么？" # 语义检索
-npm run mem -- health       # 健康检查
-npm run mem -- show <id>   # 查看单条记忆
-npm run mem -- delete <id>  # 删除记忆
-npm run mem -- dump        # 导出全部为 JSON
+npm run mem -- status                                   # 查看记忆/索引状态
+npm run mem -- index --force true                       # 回填向量嵌入
+npm run mem -- search --query "我的偏好是什么？"        # 片段式召回
+npm run mem -- get --path memory/user/u1/<id>.md       # 查看单条记忆
+npm run mem -- list                                     # 兼容旧版列表视图
+npm run mem -- health                                   # 健康检查
 ```
 
 ### 🧪 基准测试

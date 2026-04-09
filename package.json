@@ -26,6 +26,9 @@
     ],
     "entries": [
       "mem8"
+    ],
+    "extensions": [
+      "./dist/index.js"
     ]
   },
   "dependencies": {

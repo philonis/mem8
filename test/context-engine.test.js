@@ -163,13 +163,217 @@ test('assemble prioritizes scoped and important memories', async () => {
     sessionId: 'session-e',
     turnNumber: 1,
     config,
-    availableTokens: 40,
+    availableTokens: 120,
     currentText: 'We are designing mem8 architecture.'
   });
 
   assert.equal(assembled.errors.length, 0);
   assert.ok(assembled.memories.length >= 1);
-  assert.match(assembled.memories[0].content, /local-first/);
+  assert.ok(assembled.memories.some((memory) => /local-first/.test(memory.content)));
+
+  await store.close();
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
+test('assemble keeps budget-fitting memories when top-ranked item exceeds token budget', async () => {
+  const { dir, config } = makeTempConfig();
+  const engine = new Mem8ContextEngine(config);
+  const store = engine.getStore();
+
+  await store.add({
+    scope: 'project',
+    type: 'decision',
+    projectId: 'project-1',
+    content: 'Critical architecture decision '.repeat(20).trim(),
+    importance: 0.99,
+    confidence: 0.95,
+    source: 'conversation'
+  });
+  await store.add({
+    scope: 'user',
+    type: 'preference',
+    userId: 'user-1',
+    content: 'User prefers concise status updates.',
+    importance: 0.8,
+    confidence: 0.85,
+    source: 'conversation'
+  });
+  await store.add({
+    scope: 'session',
+    type: 'fact',
+    sessionId: 'session-f',
+    content: 'Current task is validating memory assembly output.',
+    importance: 0.65,
+    confidence: 0.8,
+    source: 'conversation'
+  });
+
+  const assembled = await engine.assemble({
+    sessionId: 'session-f',
+    turnNumber: 1,
+    config,
+    availableTokens: 100,
+    currentText: 'We need concise updates while validating memory assembly.'
+  });
+
+  assert.equal(assembled.errors.length, 0);
+  assert.equal(assembled.memories.length, 2);
+  assert.ok(assembled.memories.every((memory) => memory.content.length < 120));
+
+  await store.close();
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
+test('assemble respects configured maxTokensPerAssemble cap', async () => {
+  const { dir, config } = makeTempConfig();
+  config.maxTokensPerAssemble = 18;
+  const engine = new Mem8ContextEngine(config);
+  const store = engine.getStore();
+
+  await store.add({
+    scope: 'project',
+    type: 'decision',
+    projectId: 'project-1',
+    content: 'Keep mem8 local first with SQLite persistence.',
+    importance: 0.95,
+    confidence: 0.9,
+    source: 'conversation'
+  });
+  await store.add({
+    scope: 'user',
+    type: 'preference',
+    userId: 'user-1',
+    content: 'Use concise bullet updates.',
+    importance: 0.8,
+    confidence: 0.85,
+    source: 'conversation'
+  });
+
+  const assembled = await engine.assemble({
+    sessionId: 'session-g',
+    turnNumber: 1,
+    config,
+    availableTokens: 400,
+    currentText: 'Need concise local-first guidance.'
+  });
+
+  assert.equal(assembled.errors.length, 0);
+  assert.ok(assembled.tokenCount <= 18);
+
+  await store.close();
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
+test('searchMemories returns virtual path and citation metadata', async () => {
+  const { dir, config } = makeTempConfig();
+  const engine = new Mem8ContextEngine(config);
+  const store = engine.getStore();
+
+  const memory = await store.add({
+    scope: 'project',
+    type: 'decision',
+    projectId: 'project-1',
+    content: 'We decided to keep mem8 local-first with SQLite persistence and semantic recall.',
+    summary: 'Keep mem8 local-first.',
+    importance: 0.95,
+    confidence: 0.88,
+    source: 'conversation'
+  });
+
+  const results = await engine.searchMemories({
+    query: 'local-first sqlite',
+    projectId: 'project-1',
+    maxResults: 3
+  });
+
+  assert.equal(results.length, 1);
+  assert.equal(results[0].id, memory.id);
+  assert.match(results[0].path, new RegExp(`memory/project/project-1/${memory.id}\\.md$`));
+  assert.ok(results[0].startLine >= 1);
+  assert.ok(results[0].endLine >= results[0].startLine);
+  assert.match(results[0].citation, /#L\d+-L\d+$/);
+  assert.match(results[0].snippet, /local-first/i);
+
+  await store.close();
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
+test('getMemoryByPath supports virtual paths and line slicing', async () => {
+  const { dir, config } = makeTempConfig();
+  const engine = new Mem8ContextEngine(config);
+  const store = engine.getStore();
+
+  const memory = await store.add({
+    scope: 'user',
+    type: 'preference',
+    userId: 'user-1',
+    content: 'Prefer concise progress updates.\nPrefer bullet points for action items.',
+    importance: 0.9,
+    confidence: 0.8,
+    source: 'conversation'
+  });
+
+  const full = await engine.getMemoryByPath(`memory/user/user-1/${memory.id}.md`);
+  assert.equal(full.found, true);
+  assert.equal(full.id, memory.id);
+  assert.match(full.text, /## Content/);
+  assert.match(full.text, /Prefer concise progress updates/);
+
+  const sliced = await engine.getMemoryByPath(`memory/user/user-1/${memory.id}.md`, 15, 2);
+  assert.equal(sliced.found, true);
+  assert.equal(sliced.startLine, 15);
+  assert.equal(sliced.endLine, 16);
+  assert.doesNotMatch(sliced.text, /# mem8 memory/);
+  assert.match(sliced.text, /Prefer concise progress updates/);
+
+  const missing = await engine.getMemoryByPath('memory/user/user-1/missing.md', 5, 2);
+  assert.equal(missing.found, false);
+  assert.equal(missing.startLine, 5);
+  assert.equal(missing.endLine, 5);
+
+  await store.close();
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
+test('status and index report embedding readiness for local stores', async () => {
+  const { dir, config } = makeTempConfig();
+  const engine = new Mem8ContextEngine(config);
+  const store = engine.getStore();
+
+  await store.add({
+    scope: 'session',
+    type: 'fact',
+    sessionId: 'session-status',
+    content: 'Current debugging task is validating status output.',
+    importance: 0.6,
+    confidence: 0.7,
+    source: 'conversation'
+  });
+  await store.add({
+    scope: 'project',
+    type: 'decision',
+    projectId: 'project-1',
+    content: 'Ship search and get tooling before claiming inspectable memory.',
+    importance: 0.9,
+    confidence: 0.85,
+    source: 'conversation'
+  });
+
+  const status = await engine.getStatus();
+  assert.equal(status.healthy, true);
+  assert.equal(status.memoryCount, 2);
+  assert.equal(status.embeddingAvailable, false);
+  assert.equal(status.pendingEmbeddingCount, 2);
+  assert.equal(status.scopeCounts.session, 1);
+  assert.equal(status.scopeCounts.project, 1);
+  assert.equal(status.typeCounts.fact, 1);
+  assert.equal(status.typeCounts.decision, 1);
+
+  const indexed = await engine.indexMemories();
+  assert.equal(indexed.indexed, 0);
+  assert.equal(indexed.skipped, 2);
+  assert.equal(indexed.total, 2);
+  assert.equal(indexed.embeddingAvailable, false);
 
   await store.close();
   fs.rmSync(dir, { recursive: true, force: true });

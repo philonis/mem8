@@ -108,6 +108,10 @@ export class SqliteMemoryRepository implements MemoryRepository {
   query(query: MemoryQuery): MemoryRecord[] {
     let sql = 'SELECT * FROM memories WHERE 1=1';
     const params = [];
+    if (query.id) {
+      sql += ' AND id = ?';
+      params.push(query.id);
+    }
     if (query.scope) {
       sql += ' AND scope = ?';
       params.push(query.scope);
