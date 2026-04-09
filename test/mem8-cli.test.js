@@ -151,3 +151,65 @@ test('mem8 CLI exposes status, search, and get commands for inspectable memory',
 
   fs.rmSync(dir, { recursive: true, force: true });
 });
+
+test('mem8 CLI can import legacy OpenClaw MEMORY.md and session memory files', () => {
+  const { dir, dbPath } = makeDbPath();
+  const legacyRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'mem8-legacy-'));
+  const legacyMemoryMd = path.join(legacyRoot, 'MEMORY.md');
+  const legacyMemoryDir = path.join(legacyRoot, 'memory');
+
+  fs.mkdirSync(legacyMemoryDir, { recursive: true });
+  fs.writeFileSync(
+    legacyMemoryMd,
+    `# MEMORY.md\n\n## 高老师个人喜好\n\n- 咖啡：美式咖啡 ☕\n- 爱好：放风筝 🪁\n\n## 项目知识\n\n### 黄金屋\n- iOS 藏书管理应用\n`,
+    'utf8'
+  );
+  fs.writeFileSync(
+    path.join(legacyMemoryDir, '2026-04-09-coffee.md'),
+    `# Session: 2026-04-09 11:29:22 UTC
+
+- **Session Key**: agent:main:feishu:direct:ou_test
+- **Session ID**: session-1
+- **Source**: feishu
+
+## Conversation Summary
+
+高磊: 我爱喝美式咖啡
+assistant: 记下了
+`,
+    'utf8'
+  );
+
+  const importOut = execFileSync(
+    'node',
+    ['scripts/mem8-cli.js', 'import-openclaw', '--db', dbPath, '--memoryMd', legacyMemoryMd, '--memoryDir', legacyMemoryDir, '--user', 'ou_test'],
+    {
+      cwd: '/Users/qihoo/mem8',
+      encoding: 'utf8'
+    }
+  );
+  assert.match(importOut, /"imported": 4/);
+  assert.match(importOut, /"userId": "ou_test"/);
+
+  const dumpOut = execFileSync('node', ['scripts/mem8-cli.js', 'dump', '--db', dbPath], {
+    cwd: '/Users/qihoo/mem8',
+    encoding: 'utf8'
+  });
+  assert.match(dumpOut, /咖啡：美式咖啡/);
+  assert.match(dumpOut, /爱好：放风筝/);
+  assert.match(dumpOut, /iOS 藏书管理应用/);
+  assert.match(dumpOut, /Legacy conversation summary/);
+
+  const secondImportOut = execFileSync(
+    'node',
+    ['scripts/mem8-cli.js', 'import-openclaw', '--db', dbPath, '--memoryMd', legacyMemoryMd, '--memoryDir', legacyMemoryDir, '--user', 'ou_test'],
+    {
+      cwd: '/Users/qihoo/mem8',
+      encoding: 'utf8'
+    }
+  );
+  assert.match(secondImportOut, /"imported": 0/);
+
+  fs.rmSync(dir, { recursive: true, force: true });
+  fs.rmSync(legacyRoot, { recursive: true, force: true });
+});

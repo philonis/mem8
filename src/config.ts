@@ -1,51 +1,59 @@
-export interface Mem8Config {
-  dbPath?: string;
-  embeddingProvider?: 'ollama' | 'none';
-  embeddingModel?: string;
+import type { Mem8Config } from './types';
+
+export type Mem8ConfigInput = Partial<Mem8Config> & {
   embeddingUrl?: string;
-  maxTokensPerAssemble?: number;
-  debug?: boolean;
-}
+};
 
 export const DEFAULT_CONFIG: Mem8Config = {
-  dbPath: '~/.mem8/memories.sqlite',
-  embeddingProvider: 'none',
+  dbPath: `${process.env.HOME || '/tmp'}/.mem8/memories.sqlite`,
+  embeddingProvider: 'ollama',
   embeddingModel: 'nomic-embed-text:latest',
-  embeddingUrl: 'http://127.0.0.1:11434',
+  embeddingBaseUrl: 'http://127.0.0.1:11434',
   maxTokensPerAssemble: 500,
   debug: false
 };
 
-export function validateConfig(config: Partial<Mem8Config> | undefined): Mem8Config {
-  if (!config) {
-    return { ...DEFAULT_CONFIG };
+export function normalizeConfig(config: Mem8ConfigInput = {}): Mem8Config {
+  const finalConfig: Mem8Config = { ...DEFAULT_CONFIG, ...config };
+
+  if (typeof config.embeddingUrl === 'string' && config.embeddingUrl.trim()) {
+    finalConfig.embeddingBaseUrl = config.embeddingUrl.trim();
   }
 
+  return finalConfig;
+}
+
+export function validateConfig(config: Mem8ConfigInput | undefined): Mem8Config {
+  const finalConfig = normalizeConfig(config);
   const errors: string[] = [];
-  
-  if (config.dbPath !== undefined && typeof config.dbPath !== 'string') {
+
+  if (finalConfig.dbPath !== undefined && typeof finalConfig.dbPath !== 'string') {
     errors.push('dbPath must be a string');
   }
 
-  if (config.embeddingProvider !== undefined && !['ollama', 'none'].includes(config.embeddingProvider)) {
+  if (finalConfig.embeddingProvider !== undefined && !['ollama', 'none'].includes(finalConfig.embeddingProvider)) {
     errors.push('embeddingProvider must be "ollama" or "none"');
   }
 
-  if (config.embeddingModel !== undefined && typeof config.embeddingModel !== 'string') {
+  if (finalConfig.embeddingModel !== undefined && typeof finalConfig.embeddingModel !== 'string') {
     errors.push('embeddingModel must be a string');
   }
 
-  if (config.embeddingUrl !== undefined && typeof config.embeddingUrl !== 'string') {
-    errors.push('embeddingUrl must be a string');
+  if (finalConfig.embeddingBaseUrl !== undefined && typeof finalConfig.embeddingBaseUrl !== 'string') {
+    errors.push('embeddingBaseUrl must be a string');
   }
 
-  if (config.maxTokensPerAssemble !== undefined) {
-    if (typeof config.maxTokensPerAssemble !== 'number' || config.maxTokensPerAssemble < 50 || config.maxTokensPerAssemble > 5000) {
+  if (finalConfig.maxTokensPerAssemble !== undefined) {
+    if (
+      typeof finalConfig.maxTokensPerAssemble !== 'number' ||
+      finalConfig.maxTokensPerAssemble < 50 ||
+      finalConfig.maxTokensPerAssemble > 5000
+    ) {
       errors.push('maxTokensPerAssemble must be between 50 and 5000');
     }
   }
 
-  if (config.debug !== undefined && typeof config.debug !== 'boolean') {
+  if (finalConfig.debug !== undefined && typeof finalConfig.debug !== 'boolean') {
     errors.push('debug must be a boolean');
   }
 
@@ -53,5 +61,5 @@ export function validateConfig(config: Partial<Mem8Config> | undefined): Mem8Con
     throw new Error(`Invalid mem8 config: ${errors.join('; ')}`);
   }
 
-  return { ...DEFAULT_CONFIG, ...config };
+  return finalConfig;
 }

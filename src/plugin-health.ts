@@ -1,6 +1,7 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { Mem8Config, validateConfig } from './config';
+import { validateConfig } from './config';
+import type { Mem8Config } from './types';
 
 export interface HealthStatus {
   healthy: boolean;

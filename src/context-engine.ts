@@ -581,10 +581,29 @@ export class Mem8ContextEngine {
   }
 
   private calculateSimilarity(a: string, b: string): number {
-    const aWords = new Set(a.toLowerCase().split(/\s+/));
-    const bWords = new Set(b.toLowerCase().split(/\s+/));
+    const aWords = new Set(tokenizeForSimilarity(a));
+    const bWords = new Set(tokenizeForSimilarity(b));
     const intersection = [...aWords].filter((word) => bWords.has(word)).length;
     const union = new Set([...aWords, ...bWords]).size;
     return union > 0 ? intersection / union : 0;
   }
+}
+
+function tokenizeForSimilarity(text: string): string[] {
+  const normalized = text.toLowerCase().trim();
+  if (!normalized) {
+    return [];
+  }
+
+  const tokens = normalized.split(/\s+/).filter(Boolean);
+  const compact = normalized.replace(/\s+/g, '');
+
+  for (let index = 0; index < compact.length; index += 1) {
+    tokens.push(compact[index]);
+    if (index < compact.length - 1) {
+      tokens.push(compact.slice(index, index + 2));
+    }
+  }
+
+  return tokens;
 }

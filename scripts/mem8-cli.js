@@ -1,3 +1,4 @@
+const fs = require('node:fs');
 const path = require('node:path');
 
 const { Mem8ContextEngine } = require('../dist/context-engine.js');
@@ -43,6 +44,212 @@ function makeStore(options) {
 
 function makeEngine(options = {}) {
   return new Mem8ContextEngine(makeConfig(options));
+}
+
+function normalizeWhitespace(value) {
+  return String(value || '').replace(/\s+/g, ' ').trim();
+}
+
+function stripMarkdown(value) {
+  return normalizeWhitespace(
+    String(value || '')
+      .replace(/```[\s\S]*?```/g, ' ')
+      .replace(/`([^`]+)`/g, '$1')
+      .replace(/\*\*([^*]+)\*\*/g, '$1')
+      .replace(/\*([^*]+)\*/g, '$1')
+  );
+}
+
+function inferLegacyRecordShape(line, sectionPath, options = {}) {
+  const text = stripMarkdown(line.replace(/^-+\s*/, ''));
+  const section = sectionPath.join(' / ');
+  const userSection = /高老师相关|高老师个人喜好|使用偏好/.test(section);
+  const projectSection = /项目知识|项目概述|技术架构|API 端点|服务管理/.test(section);
+  const taskLike = /(每天|定时|cron|需要|待办|跟进|下一步)/.test(text);
+  const preferenceLike = /(喜欢|偏好|习惯|默认|尽量|不要|别用|格式[:：]|咖啡[:：]|爱好[:：])/.test(text);
+
+  let scope = 'session';
+  let type = 'fact';
+  let importance = 0.72;
+  let confidence = 0.82;
+
+  if (userSection) {
+    scope = 'user';
+    type = preferenceLike ? 'preference' : taskLike ? 'task' : 'fact';
+    importance = type === 'preference' ? 0.92 : type === 'task' ? 0.84 : 0.8;
+  } else if (projectSection) {
+    scope = options.projectId ? 'project' : 'session';
+    type = taskLike ? 'task' : 'fact';
+    importance = type === 'task' ? 0.82 : 0.78;
+  } else if (/定时任务/.test(section)) {
+    scope = options.projectId ? 'project' : 'session';
+    type = 'task';
+    importance = 0.86;
+  } else if (/个人喜好/.test(section) || preferenceLike) {
+    scope = 'user';
+    type = 'preference';
+    importance = 0.9;
+  }
+
+  return {
+    scope,
+    type,
+    content: text,
+    summary: text.length > 72 ? `${text.slice(0, 69)}...` : text,
+    importance,
+    confidence
+  };
+}
+
+function parseMemoryMdFile(filePath, options = {}) {
+  const raw = fs.readFileSync(filePath, 'utf8');
+  const lines = raw.split(/\r?\n/);
+  const sectionPath = [];
+  const records = [];
+
+  for (const line of lines) {
+    const heading = line.match(/^(#{2,6})\s+(.+?)\s*$/);
+    if (heading) {
+      const level = heading[1].length;
+      sectionPath[level - 2] = stripMarkdown(heading[2]);
+      sectionPath.length = Math.max(0, level - 1);
+      continue;
+    }
+
+    if (!/^\s*-\s+/.test(line) || /^\s*---+\s*$/.test(line)) {
+      continue;
+    }
+
+    const shape = inferLegacyRecordShape(line, sectionPath.filter(Boolean), options);
+    records.push({
+      ...shape,
+      sessionId: options.sessionId,
+      userId: shape.scope === 'user' ? options.userId : undefined,
+      projectId: shape.scope === 'project' ? options.projectId : undefined,
+      source: 'system',
+      metadata: {
+        importedFrom: filePath,
+        legacyKind: 'workspace-memory-md',
+        legacySectionPath: sectionPath.filter(Boolean)
+      }
+    });
+  }
+
+  return records;
+}
+
+function parseLegacySessionFile(filePath, options = {}) {
+  const raw = fs.readFileSync(filePath, 'utf8');
+  const sessionKey = raw.match(/^\-\s+\*\*Session Key\*\*:\s+(.+)$/m)?.[1]?.trim();
+  const sessionId = raw.match(/^\-\s+\*\*Session ID\*\*:\s+(.+)$/m)?.[1]?.trim();
+  const senderId = raw.match(/"sender_id":\s*"([^"]+)"/)?.[1]?.trim();
+  const title = path.basename(filePath, path.extname(filePath)).replace(/-/g, ' ');
+  const summaryBody = raw.split(/## Conversation Summary/i)[1] || raw;
+  const content = normalizeWhitespace(
+    `Legacy conversation summary (${title}): ${stripMarkdown(summaryBody).slice(0, options.maxChars || 1800)}`
+  );
+
+  if (!content) {
+    return null;
+  }
+
+  return {
+    scope: 'session',
+    type: 'summary',
+    sessionId: sessionId || options.sessionId,
+    userId: senderId || options.userId,
+    projectId: options.projectId,
+    content,
+    summary: content.length > 96 ? `${content.slice(0, 93)}...` : content,
+    importance: 0.42,
+    freshness: 0.35,
+    confidence: 0.65,
+    source: 'system',
+    metadata: {
+      importedFrom: filePath,
+      legacyKind: 'workspace-memory-file',
+      legacySessionKey: sessionKey,
+      legacySessionId: sessionId,
+      legacySenderId: senderId
+    }
+  };
+}
+
+async function detectPreferredUserId(store, explicitUserId) {
+  if (explicitUserId) {
+    return explicitUserId;
+  }
+
+  const rows = await store.query({ limit: 100000 });
+  const counts = new Map();
+  for (const row of rows) {
+    if (!row.userId) continue;
+    counts.set(row.userId, (counts.get(row.userId) || 0) + 1);
+  }
+
+  return [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
+}
+
+async function importLegacyOpenClawCommand(options) {
+  const store = makeStore(options);
+  const existing = await store.query({ limit: 100000 });
+  const existingContent = new Set(existing.map((row) => normalizeWhitespace(row.content).toLowerCase()));
+  const userId = await detectPreferredUserId(store, options.user);
+  const memoryMdPath = options.memoryMd;
+  const memoryDirPath = options.memoryDir;
+  const records = [];
+
+  if (memoryMdPath) {
+    records.push(...parseMemoryMdFile(memoryMdPath, { userId, projectId: options.project }));
+  }
+
+  if (memoryDirPath && fs.existsSync(memoryDirPath)) {
+    const files = fs.readdirSync(memoryDirPath)
+      .filter((name) => name.endsWith('.md'))
+      .sort();
+    for (const file of files) {
+      const record = parseLegacySessionFile(path.join(memoryDirPath, file), { userId, projectId: options.project });
+      if (record) {
+        records.push(record);
+      }
+    }
+  }
+
+  let imported = 0;
+  let skipped = 0;
+  for (const record of records) {
+    const key = normalizeWhitespace(record.content).toLowerCase();
+    if (!key || existingContent.has(key)) {
+      skipped += 1;
+      continue;
+    }
+    if (options.dryRun === 'true') {
+      imported += 1;
+      existingContent.add(key);
+      continue;
+    }
+    await store.add(record);
+    imported += 1;
+    existingContent.add(key);
+  }
+
+  console.log(
+    JSON.stringify(
+      {
+        dbPath: resolveDbPath(options.db),
+        userId: userId || null,
+        imported,
+        skipped,
+        sources: {
+          memoryMd: memoryMdPath || null,
+          memoryDir: memoryDirPath || null
+        }
+      },
+      null,
+      2
+    )
+  );
+  await store.close();
 }
 
 function printTable(rows) {
@@ -236,6 +443,7 @@ Commands:
          [--scope <scope>] [--type <type>] [--session <id>] [--user <id>] [--project <id>] [--top <n>]
   search [--db <path>] --query <text> [--scope <scope>] [--type <type>] [--session <id>] [--user <id>]
          [--project <id>] [--top <n>] [--minScore <n>] [--embeddingProvider ollama|none] [--model <ollama-model>] [--baseUrl <url>]
+  import-openclaw [--db <path>] [--memoryMd <path>] [--memoryDir <path>] [--user <id>] [--project <id>] [--dryRun true]
   show   [--db <path>] --id <memory-id>
   get    [--db <path>] (--path <virtual-path> | --id <memory-id>) [--from <line>] [--lines <n>]
   delete [--db <path>] --id <memory-id>
@@ -257,6 +465,7 @@ async function main() {
     index: indexCommand,
     recall: recallCommand,
     search: searchCommand,
+    'import-openclaw': importLegacyOpenClawCommand,
     show: showCommand,
     get: getCommand,
     delete: deleteCommand,

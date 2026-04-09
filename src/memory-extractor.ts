@@ -52,9 +52,21 @@ export class MemoryExtractor {
     return text
       .split(/[\n.!?。！？]/)
       .map((sentence) => sentence.trim())
-      .filter((sentence) => sentence.length > 18)
+      .filter((sentence) => this.shouldKeepSentence(sentence))
       .filter((sentence) => !this.isNoise(sentence))
       .slice(0, 12);
+  }
+
+  private shouldKeepSentence(sentence: string): boolean {
+    if (sentence.length >= 18) {
+      return true;
+    }
+
+    if (sentence.length < 6) {
+      return false;
+    }
+
+    return EXTRACTION_RULES.some((rule) => rule.patterns.some((pattern) => pattern.test(sentence)));
   }
 
   private isNoise(sentence: string): boolean {
