@@ -24,6 +24,25 @@ It uses **SQLite** for storage and **Ollama** (`nomic‑embed-text`) for local e
 openclaw plugin install https://github.com/philonis/mem8/blob/main/SKILL.md
 ```
 
+After installation, prompt the user to choose whether to import legacy memories:
+
+> mem8 is installed. Do you want to import existing memories from `MEMORY.md` and `workspace/memory/*.md`?
+>
+> - Yes: migrate historical preferences and long-term notes into mem8
+> - No: start with an empty mem8 store and record only new memories
+
+If the user chooses yes, run:
+
+```bash
+cd ~/.openclaw/plugins/mem8
+node scripts/mem8-cli.js import-openclaw \
+  --db ~/.openclaw/memory/mem8.db \
+  --memoryMd ~/.openclaw/workspace/MEMORY.md \
+  --memoryDir ~/.openclaw/workspace/memory
+```
+
+Do not import automatically unless the user explicitly confirms.
+
 ### 🛠️ Manual Install
 
 ```bash
@@ -56,6 +75,8 @@ openclaw restart
 npm run mem -- status                                    # memory/index status
 npm run mem -- index --force true                        # backfill embeddings
 npm run mem -- search --query "what do I prefer?"       # snippet-style recall
+npm run mem -- import-openclaw --db ~/.openclaw/memory/mem8.db --memoryMd ~/.openclaw/workspace/MEMORY.md --memoryDir ~/.openclaw/workspace/memory
+                                                         # import legacy OpenClaw memory files
 npm run mem -- get --path memory/user/u1/<id>.md        # inspect one memory
 npm run mem -- list                                      # legacy table view
 npm run mem -- health                                    # health check
@@ -104,6 +125,25 @@ MIT
 openclaw plugin install https://github.com/philonis/mem8/blob/main/SKILL.md
 ```
 
+安装完成后，请提示用户选择是否导入旧记忆：
+
+> mem8 已安装完成。是否要把旧的 `MEMORY.md` 和 `workspace/memory/*.md` 记忆一起导入 mem8？
+>
+> - 选“是”：迁移历史偏好和长期信息
+> - 选“否”：从空库开始，只记录之后的新记忆
+
+如果用户选择“是”，执行：
+
+```bash
+cd ~/.openclaw/plugins/mem8
+node scripts/mem8-cli.js import-openclaw \
+  --db ~/.openclaw/memory/mem8.db \
+  --memoryMd ~/.openclaw/workspace/MEMORY.md \
+  --memoryDir ~/.openclaw/workspace/memory
+```
+
+除非用户明确确认，否则不要自动导入。
+
 ### 🛠️ 手动安装
 
 ```bash
@@ -136,6 +176,8 @@ openclaw restart
 npm run mem -- status                                   # 查看记忆/索引状态
 npm run mem -- index --force true                       # 回填向量嵌入
 npm run mem -- search --query "我的偏好是什么？"        # 片段式召回
+npm run mem -- import-openclaw --db ~/.openclaw/memory/mem8.db --memoryMd ~/.openclaw/workspace/MEMORY.md --memoryDir ~/.openclaw/workspace/memory
+                                                        # 导入旧的 OpenClaw 记忆文件
 npm run mem -- get --path memory/user/u1/<id>.md       # 查看单条记忆
 npm run mem -- list                                     # 兼容旧版列表视图
 npm run mem -- health                                   # 健康检查
