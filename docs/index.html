@@ -378,6 +378,58 @@ openclaw restart</div></div></div>
         <a class="button" href="https://raw.githubusercontent.com/philonis/mem8/main/SKILL.md">打开 SKILL.md 安装链接</a>
       </div>
     </section>
+
+    <section class="block" id="uninstall">
+      <div class="container">
+        <div class="section-head">
+          <h2>mem8 插件卸载说明</h2>
+          <p class="section-desc">如果你要回退或排障，可以按下面步骤执行。命令都可直接复制。</p>
+        </div>
+        <div class="install-panel">
+          <div class="install-step">
+            <div class="step-no">1</div>
+            <div>
+              <h4>标准卸载</h4>
+              <div class="code"># 预览（可选）
+openclaw plugins uninstall mem8 --dry-run
+
+# 正式卸载
+openclaw plugins uninstall mem8 --force</div>
+            </div>
+          </div>
+          <div class="install-step">
+            <div class="step-no">2</div>
+            <div>
+              <h4>急救卸载</h4>
+              <p>如果 OpenClaw 启动失败（插件加载报错卡住），按顺序执行：</p>
+              <div class="code"># 1. 删除插件目录
+rm -rf ~/.openclaw/plugins/mem8
+
+# 2. 从配置中移除插件引用
+openclaw config unset plugins.entries.mem8
+
+# 3. 重启 Gateway
+openclaw gateway restart</div>
+            </div>
+          </div>
+          <div class="install-step">
+            <div class="step-no">3</div>
+            <div>
+              <h4>清理数据（可选）</h4>
+              <p>mem8 的数据库和索引默认在 <code>~/.mem8/</code>，卸载插件后不再使用时可手动删除：</p>
+              <div class="code">rm -rf ~/.mem8</div>
+            </div>
+          </div>
+          <div class="install-step" style="margin-bottom:0;">
+            <div class="step-no">4</div>
+            <div>
+              <h4>恢复原有记忆系统</h4>
+              <p>mem8 卸载后，OpenClaw 会恢复使用原有的 <code>MEMORY.md</code> + <code>memory/*.md</code> 文件系统，无需额外操作。</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
   </main>
 
   <footer>

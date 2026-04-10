@@ -154,6 +154,19 @@ openclaw restart</div></div></div><div class="install-step" style="margin-bottom
 }</div></div></div></div></div></section>
 
     <section class="final-cta"><div class="container"><div class="eyebrow" style="justify-content:center; width:100%;">Ready to Install</div><h2 style="margin:0; font-size: clamp(34px, 4.5vw, 58px); letter-spacing:-0.04em;">Give OpenClaw a better memory — and a lighter prompt bill</h2><p>mem8 is a local memory layer for OpenClaw users who care about ownership, persistence, and lower context cost.</p><a class="button" href="https://raw.githubusercontent.com/philonis/mem8/main/SKILL.md">Open the install link</a></div></section>
+
+    <section class="block" id="uninstall"><div class="container"><div class="section-head"><h2>mem8 uninstall guide</h2><p class="section-desc">If you need to roll back or troubleshoot quickly, use these commands directly.</p></div><div class="install-panel"><div class="install-step"><div class="step-no">1</div><div><h4>Standard uninstall</h4><div class="code"># Preview (optional)
+openclaw plugins uninstall mem8 --dry-run
+
+# Uninstall
+openclaw plugins uninstall mem8 --force</div></div></div><div class="install-step"><div class="step-no">2</div><div><h4>Emergency uninstall</h4><p>If OpenClaw fails to start because plugin loading is stuck on an error, run in order:</p><div class="code"># 1. Remove the plugin directory
+rm -rf ~/.openclaw/plugins/mem8
+
+# 2. Remove plugin reference from config
+openclaw config unset plugins.entries.mem8
+
+# 3. Restart Gateway
+openclaw gateway restart</div></div></div><div class="install-step"><div class="step-no">3</div><div><h4>Clean up data (optional)</h4><p>mem8 data and indexes are stored in <code>~/.mem8/</code> by default. If you no longer need them after uninstall:</p><div class="code">rm -rf ~/.mem8</div></div></div><div class="install-step" style="margin-bottom:0;"><div class="step-no">4</div><div><h4>Restore original memory system</h4><p>After mem8 is removed, OpenClaw automatically goes back to the original <code>MEMORY.md</code> + <code>memory/*.md</code> file-based memory flow. No extra action is required.</p></div></div></div></div></section>
   </main>
 
   <footer><div class="container footer-inner"><div>mem8 · Local-First Memory for OpenClaw</div><div>MIT License · GitHub: <a href="https://github.com/philonis/mem8">philonis/mem8</a></div></div></footer>
