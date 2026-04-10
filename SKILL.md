@@ -27,6 +27,25 @@ tags: [openclaw, memory, local-first, ollama, sqlite]
 openclaw plugin install https://github.com/philonis/mem8/blob/main/SKILL.md
 ```
 
+安装完成后，请主动询问用户：
+
+> 已安装完成。是否要把旧的 `MEMORY.md` / `workspace/memory/*.md` 记忆一起导入 mem8？
+>
+> - 选“是”：执行旧记忆导入，保留历史偏好和长期信息
+> - 选“否”：保持空库启动，只记录后续新记忆
+
+如果用户选择导入，可执行：
+
+```bash
+cd ~/.openclaw/plugins/mem8
+node scripts/mem8-cli.js import-openclaw \
+  --db ~/.openclaw/memory/mem8.db \
+  --memoryMd ~/.openclaw/workspace/MEMORY.md \
+  --memoryDir ~/.openclaw/workspace/memory
+```
+
+如果用户不确定，先解释差异，再让用户二选一；不要默认自动导入。
+
 > **提示**：如果当前网络不支持 SSH/HTTPS 直连，请在本地手动克隆后复制插件目录到 `~/.openclaw/plugins/`。
 
 ## 📦 手动安装（备选方案）
@@ -69,6 +88,8 @@ npm run mem -- list          # 列出已存储的记忆
 npm run mem -- stats       # 统计记忆库（按 scope/type 分布）
 npm run mem -- recall "你的偏好是什么？"  # 语义检索
 npm run mem -- health     # 健康检查（目录/配置/Ollama）
+npm run mem -- import-openclaw --db ~/.openclaw/memory/mem8.db --memoryMd ~/.openclaw/workspace/MEMORY.md --memoryDir ~/.openclaw/workspace/memory
+                            # 导入旧的 OpenClaw MEMORY.md 和 memory 目录
 npm run mem -- show <id>  # 查看单条记忆详情
 npm run mem -- delete <id> # 删除记忆
 npm run mem -- dump       # 导出全部记忆为 JSON
