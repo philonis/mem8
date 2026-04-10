@@ -6,25 +6,25 @@
 
 ## 🇺🇸 English
 
-`mem8` is a pure local‑first persistent memory plugin for **OpenClaw 3.8+**.  
-It uses **SQLite** for storage and **Ollama** (`nomic‑embed-text`) for local embeddings, delivering **~36% token savings** compared to full transcript replay.
+`mem8` is a pure local‑first persistent memory plugin for **OpenClaw 3.8+**.
+It uses **SQLite** for storage and **Ollama** (`nomic‑embed-text`) for local embeddings, giving OpenClaw a durable memory layer with measurable context savings.
 
 ### 🔑 Key Features
 
 - **Pure local** – No cloud dependency, fully offline.
-- **Token efficiency** – ~36% token saving vs raw transcript, ~27% vs rule‑based baseline.
-- **Persistent** – SQLite-based, survives restarts.
+- **Persistent** – SQLite-based storage that survives restarts and new sessions.
+- **Token efficiency** – Structured recall keeps assembled context smaller than replaying full transcripts.
 - **Auto‑hygiene** – Auto‑dedup, stale cleanup, merge similar memories.
 - **Structured memory** – Scope (`session`/`user`/`project`) + Type (`preference`/`decision`/`task`/`fact`).
-- **One‑click install** – Via `SKILL.md` URL.
+- **One‑click install** – Via a single `SKILL.md` URL.
 
 ### ⚡ One‑Click Install
 
 ```bash
-openclaw plugin install https://github.com/philonis/mem8/blob/main/SKILL.md
+openclaw plugin install https://raw.githubusercontent.com/philonis/mem8/main/SKILL.md
 ```
 
-After installation, prompt the user to choose whether to import legacy memories:
+After installation, ask whether to import legacy memories:
 
 > mem8 is installed. Do you want to import existing memories from `MEMORY.md` and `workspace/memory/*.md`?
 >
@@ -72,14 +72,18 @@ openclaw restart
 ### 🎤 CLI
 
 ```bash
-npm run mem -- status                                    # memory/index status
-npm run mem -- index --force true                        # backfill embeddings
-npm run mem -- search --query "what do I prefer?"       # snippet-style recall
+npm run mem -- status
+npm run mem -- index --force true
+npm run mem -- recall --query "what do I prefer?"
+npm run mem -- search --query "americano coffee"
 npm run mem -- import-openclaw --db ~/.openclaw/memory/mem8.db --memoryMd ~/.openclaw/workspace/MEMORY.md --memoryDir ~/.openclaw/workspace/memory
-                                                         # import legacy OpenClaw memory files
-npm run mem -- get --path memory/user/u1/<id>.md        # inspect one memory
-npm run mem -- list                                      # legacy table view
-npm run mem -- health                                    # health check
+npm run mem -- show --id <memory-id>
+npm run mem -- get --path memory/user/u1/<id>.md
+npm run mem -- delete --id <memory-id>
+npm run mem -- dump
+npm run mem -- list
+npm run mem -- stats
+npm run mem -- health
 ```
 
 ### 🧪 Benchmark
@@ -93,6 +97,7 @@ Reports are in `benchmark/output/`.
 ### 📚 Docs
 
 - **Technical Design**: `docs/tech-design.md`
+- **Landing Pages**: `docs/index.html`, `docs/en.html`
 - **Benchmark**: `benchmark/output/`
 - **Plugin Config**: `openclaw-plugin.json`
 
@@ -108,21 +113,21 @@ MIT
 
 ## 🇨🇳 中文
 
-`mem8` 是 **OpenClaw 3.8+** 的纯本地优先持久记忆插件。使用 **SQLite** 存储 + **Ollama** (`nomic‑embed-text`) 本地向量嵌入，实现 **约 36% token 节省**。
+`mem8` 是 **OpenClaw 3.8+** 的纯本地优先持久记忆插件。使用 **SQLite** 存储 + **Ollama** (`nomic‑embed-text`) 本地向量嵌入，为 OpenClaw 提供跨会话持久记忆，并显著降低上下文负担。
 
 ### 🔑 核心特性
 
 - **纯本地** – 完全离线，无云依赖
-- **Token 节省** – 约 36% vs 完整 transcript，约 27% vs 规则基线
-- **持久化** – SQLite 跨会话不丢失
+- **持久化** – SQLite 跨重启、跨新会话保留记忆
+- **Token 效率** – 结构化召回比完整 transcript 回放更省上下文
 - **自动清理** – 自动去重、陈旧清理、相似记忆合并
 - **结构化记忆** – 范围 (`session`/`user`/`project`) + 类型 (`preference`/`decision`/`task`/`fact`)
-- **一键安装** – 通过 `SKILL.md` URL 直接安装
+- **一键安装** – 通过单个 `SKILL.md` 链接直接安装
 
 ### ⚡ 一键安装
 
 ```bash
-openclaw plugin install https://github.com/philonis/mem8/blob/main/SKILL.md
+openclaw plugin install https://raw.githubusercontent.com/philonis/mem8/main/SKILL.md
 ```
 
 安装完成后，请提示用户选择是否导入旧记忆：
@@ -173,14 +178,18 @@ openclaw restart
 ### 🎤 CLI
 
 ```bash
-npm run mem -- status                                   # 查看记忆/索引状态
-npm run mem -- index --force true                       # 回填向量嵌入
-npm run mem -- search --query "我的偏好是什么？"        # 片段式召回
+npm run mem -- status
+npm run mem -- index --force true
+npm run mem -- recall --query "我的偏好是什么？"
+npm run mem -- search --query "美式咖啡"
 npm run mem -- import-openclaw --db ~/.openclaw/memory/mem8.db --memoryMd ~/.openclaw/workspace/MEMORY.md --memoryDir ~/.openclaw/workspace/memory
-                                                        # 导入旧的 OpenClaw 记忆文件
-npm run mem -- get --path memory/user/u1/<id>.md       # 查看单条记忆
-npm run mem -- list                                     # 兼容旧版列表视图
-npm run mem -- health                                   # 健康检查
+npm run mem -- show --id <memory-id>
+npm run mem -- get --path memory/user/u1/<id>.md
+npm run mem -- delete --id <memory-id>
+npm run mem -- dump
+npm run mem -- list
+npm run mem -- stats
+npm run mem -- health
 ```
 
 ### 🧪 基准测试
@@ -194,6 +203,7 @@ npm run benchmark
 ### 📚 文档
 
 - **技术设计**：`docs/tech-design.md`
+- **落地页**：`docs/index.html`、`docs/en.html`
 - **基准报告**：`benchmark/output/`
 - **插件配置**：`openclaw-plugin.json`
 

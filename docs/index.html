@@ -350,54 +350,31 @@
         </div>
         <div class="install-panel">
           <div class="install-step"><div class="step-no">1</div><div><h4>把这个链接发给 OpenClaw</h4><p>这是最适合作为安装入口的地址：直接返回 SKILL.md 原文，便于 OpenClaw 读取和执行安装流程。</p><div class="code">https://raw.githubusercontent.com/philonis/mem8/main/SKILL.md</div></div></div>
-          <div class="install-step"><div class="step-no">2</div><div><h4>如果你要手动安装</h4><p>只有在特殊网络环境或要手动控制目录时，才需要下面这组命令。</p><div class="code">git clone https://github.com/philonis/mem8.git ~/.openclaw/plugins/mem8
-cd ~/.openclaw/plugins/mem8 && npm install</div></div></div>
-          <div class="install-step" style="margin-bottom:0;"><div class="step-no">3</div><div><h4>默认配置即可启动</h4><p>默认使用 SQLite 和 Ollama，本地目录不存在时会自动创建。首次上线几乎不用额外接线。</p><div class="code">{
+          <div class="install-step"><div class="step-no">2</div><div><h4>安装后先决定是否导入旧记忆</h4><p>如果你已经在 OpenClaw 里积累了 `MEMORY.md` 或 `workspace/memory/*.md`，建议安装完成后显式选择是否迁移；不要默认自动导入。</p><div class="code">node scripts/mem8-cli.js import-openclaw \
+  --db ~/.openclaw/memory/mem8.db \
+  --memoryMd ~/.openclaw/workspace/MEMORY.md \
+  --memoryDir ~/.openclaw/workspace/memory</div></div></div>
+          <div class="install-step"><div class="step-no">3</div><div><h4>如果你要手动安装</h4><p>只有在特殊网络环境或要手动控制目录时，才需要下面这组命令。</p><div class="code">git clone https://github.com/philonis/mem8.git ~/.openclaw/plugins/mem8
+cd ~/.openclaw/plugins/mem8 && npm install
+openclaw restart</div></div></div>
+          <div class="install-step" style="margin-bottom:0;"><div class="step-no">4</div><div><h4>默认配置即可启动</h4><p>默认使用 SQLite 和 Ollama，本地目录不存在时会自动创建；如果你要更严格控制组装预算，可以直接设置 `maxTokensPerAssemble`。</p><div class="code">{
   "embeddingProvider": "ollama",
   "embeddingModel": "nomic-embed-text:latest",
   "embeddingUrl": "http://127.0.0.1:11434",
-  "dbPath": "~/.mem8/memories.sqlite"
+  "dbPath": "~/.mem8/memories.sqlite",
+  "maxTokensPerAssemble": 500,
+  "debug": false
 }</div></div></div>
         </div>
       </div>
     </section>
 
-    <section class="block" id="bilingual">
-      <div class="container">
-        <div class="section-head">
-          <h2>双语网站，不只是双语介绍</h2>
-          <p class="section-desc">这里保留双语摘要，顶部也提供真正的英文独立页面入口。</p>
-        </div>
-        <div class="lang-grid">
-          <div class="lang-card">
-            <h3>中文版本</h3>
-            <p>mem8 是 OpenClaw 的本地优先记忆插件，用 SQLite 做持久化、用 Ollama 做本地 embedding，在提升长期记忆能力的同时，显著降低 Token 消耗。</p>
-            <ul>
-              <li>纯本地，不依赖云端基础设施</li>
-              <li>长会话更稳，跨重启记忆不丢</li>
-              <li>离线 benchmark 已看到清晰的 Token 节省</li>
-              <li>支持单个 SKILL.md 链接安装</li>
-            </ul>
-          </div>
-          <div class="lang-card">
-            <h3>English Summary</h3>
-            <p>mem8 is a local-first memory layer for OpenClaw. It persists memory with SQLite, performs local semantic recall with Ollama, and reduces context cost while improving long-session consistency.</p>
-            <ul>
-              <li>Local-first by default, no cloud dependency</li>
-              <li>Persistent memory across restarts and sessions</li>
-              <li>Offline benchmarks already show token savings</li>
-              <li>Installable through a single SKILL.md URL</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </section>
 
     <section class="final-cta">
       <div class="container">
         <div class="eyebrow" style="justify-content:center; width:100%;">Ready to Install</div>
         <h2 style="margin:0; font-size: clamp(34px, 4.5vw, 58px); letter-spacing:-0.04em;">让 OpenClaw 记得更多，花得更少</h2>
-        <p>mem8 是更适合本地用户的 memory infrastructure：不仅补齐长期记忆，还把 Token 节省做成了首页级卖点。</p>
+        <p>mem8 是给重视所有权、持久化和上下文成本的 OpenClaw 用户准备的本地记忆层。</p>
         <a class="button" href="https://raw.githubusercontent.com/philonis/mem8/main/SKILL.md">打开 SKILL.md 安装链接</a>
       </div>
     </section>
