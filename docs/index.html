@@ -264,8 +264,8 @@
 
           <div class="install-hero">
             <div class="install-hero-label">One-link install for OpenClaw</div>
-            <a class="install-link" href="https://raw.githubusercontent.com/philonis/mem8/main/SKILL.md">https://raw.githubusercontent.com/philonis/mem8/main/SKILL.md</a>
-            <div class="install-note">把这个 SKILL.md 链接直接发给 OpenClaw，即可走安装流程。raw 链接更适合直接读取内容并执行安装。</div>
+            <div class="code">openclaw plugin install https://raw.githubusercontent.com/philonis/mem8/main/SKILL.md</div>
+            <div class="install-note">复制这条命令到 OpenClaw 执行即可安装。</div>
           </div>
 
           <div class="hero-mini">
@@ -345,11 +345,11 @@
     <section class="block" id="install">
       <div class="container">
         <div class="section-head">
-          <h2>安装部分尽量简单到“不用解释”</h2>
-          <p class="section-desc">首屏只保留一个安装入口；下面再给补充说明，避免按钮太多把注意力打散。</p>
+          <h2>安装与启用</h2>
+          <p class="section-desc">按照下面步骤安装、导入旧记忆并完成基础配置，即可开始使用。</p>
         </div>
         <div class="install-panel">
-          <div class="install-step"><div class="step-no">1</div><div><h4>把这个链接发给 OpenClaw</h4><p>这是最适合作为安装入口的地址：直接返回 SKILL.md 原文，便于 OpenClaw 读取和执行安装流程。</p><div class="code">https://raw.githubusercontent.com/philonis/mem8/main/SKILL.md</div></div></div>
+          <div class="install-step"><div class="step-no">1</div><div><h4>把这个链接发给 OpenClaw</h4><p>使用这个地址可直接读取 `SKILL.md` 并开始插件安装。</p><div class="code">https://raw.githubusercontent.com/philonis/mem8/main/SKILL.md</div></div></div>
           <div class="install-step"><div class="step-no">2</div><div><h4>安装后先决定是否导入旧记忆</h4><p>如果你已经在 OpenClaw 里积累了 `MEMORY.md` 或 `workspace/memory/*.md`，建议安装完成后显式选择是否迁移；不要默认自动导入。</p><div class="code">node scripts/mem8-cli.js import-openclaw \
   --db ~/.openclaw/memory/mem8.db \
   --memoryMd ~/.openclaw/workspace/MEMORY.md \
@@ -375,7 +375,7 @@ openclaw restart</div></div></div>
         <div class="eyebrow" style="justify-content:center; width:100%;">Ready to Install</div>
         <h2 style="margin:0; font-size: clamp(34px, 4.5vw, 58px); letter-spacing:-0.04em;">让 OpenClaw 记得更多，花得更少</h2>
         <p>mem8 是给重视所有权、持久化和上下文成本的 OpenClaw 用户准备的本地记忆层。</p>
-        <a class="button" href="https://raw.githubusercontent.com/philonis/mem8/main/SKILL.md">打开 SKILL.md 安装链接</a>
+        <div class="code">openclaw plugin install https://raw.githubusercontent.com/philonis/mem8/main/SKILL.md</div>
       </div>
     </section>
 

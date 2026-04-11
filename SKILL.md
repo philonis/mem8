@@ -20,7 +20,7 @@ tags: [openclaw, memory, local-first, ollama, sqlite]
 | **自动清理** | 自动去重、陈旧清理、合并相似记忆 | Auto‑dedup, stale cleanup, merge similar memories |
 | **一键安装** | `SKILL.md` URL 直接安装 | One‑click via `SKILL.md` URL |
 
-## ⚡ 一键安装（OpenClaw 内部执行）
+## ⚡ 一键安装（在 OpenClaw 中执行）
 
 ```bash
 openclaw plugin install https://raw.githubusercontent.com/philonis/mem8/main/SKILL.md
