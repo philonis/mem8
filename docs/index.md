@@ -54,11 +54,15 @@ After installation, decide whether to import legacy memories from `MEMORY.md` an
 npm run mem -- recall --query "what do I prefer?"
 npm run mem -- search --query "americano coffee"
 npm run mem -- import-openclaw \
-  --db ~/.openclaw/memory/mem8.db \
+  --db ~/.mem8/memories.sqlite \
   --memoryMd ~/.openclaw/workspace/MEMORY.md \
   --memoryDir ~/.openclaw/workspace/memory
 npm run mem -- health
 ```
+
+Directory model:
+- Plugin code is installed under `~/.openclaw/plugins/mem8`
+- Runtime memory data is stored under `~/.mem8/` (default DB: `~/.mem8/memories.sqlite`)
 
 ## Docs
 

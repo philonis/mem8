@@ -36,7 +36,7 @@ If the user chooses yes, run:
 ```bash
 cd ~/.openclaw/plugins/mem8
 node scripts/mem8-cli.js import-openclaw \
-  --db ~/.openclaw/memory/mem8.db \
+  --db ~/.mem8/memories.sqlite \
   --memoryMd ~/.openclaw/workspace/MEMORY.md \
   --memoryDir ~/.openclaw/workspace/memory
 ```
@@ -55,6 +55,10 @@ cd ~/.openclaw/plugins/mem8 && npm install
 # 3️⃣ Restart OpenClaw
 openclaw restart
 ```
+
+Notes:
+- Plugin code directory: `~/.openclaw/plugins/mem8`
+- Runtime data directory: `~/.mem8/` (default DB: `~/.mem8/memories.sqlite`)
 
 ### ⚙️ Configuration
 
@@ -76,7 +80,7 @@ npm run mem -- status
 npm run mem -- index --force true
 npm run mem -- recall --query "what do I prefer?"
 npm run mem -- search --query "americano coffee"
-npm run mem -- import-openclaw --db ~/.openclaw/memory/mem8.db --memoryMd ~/.openclaw/workspace/MEMORY.md --memoryDir ~/.openclaw/workspace/memory
+npm run mem -- import-openclaw --db ~/.mem8/memories.sqlite --memoryMd ~/.openclaw/workspace/MEMORY.md --memoryDir ~/.openclaw/workspace/memory
 npm run mem -- show --id <memory-id>
 npm run mem -- get --path memory/user/u1/<id>.md
 npm run mem -- delete --id <memory-id>
@@ -142,7 +146,7 @@ openclaw plugin install https://raw.githubusercontent.com/philonis/mem8/main/SKI
 ```bash
 cd ~/.openclaw/plugins/mem8
 node scripts/mem8-cli.js import-openclaw \
-  --db ~/.openclaw/memory/mem8.db \
+  --db ~/.mem8/memories.sqlite \
   --memoryMd ~/.openclaw/workspace/MEMORY.md \
   --memoryDir ~/.openclaw/workspace/memory
 ```
@@ -161,6 +165,10 @@ cd ~/.openclaw/plugins/mem8 && npm install
 # 3️⃣ 重启 OpenClaw
 openclaw restart
 ```
+
+说明：
+- 插件代码目录：`~/.openclaw/plugins/mem8`
+- 运行时数据目录：`~/.mem8/`（默认数据库：`~/.mem8/memories.sqlite`）
 
 ### ⚙️ 配置
 
@@ -182,7 +190,7 @@ npm run mem -- status
 npm run mem -- index --force true
 npm run mem -- recall --query "我的偏好是什么？"
 npm run mem -- search --query "美式咖啡"
-npm run mem -- import-openclaw --db ~/.openclaw/memory/mem8.db --memoryMd ~/.openclaw/workspace/MEMORY.md --memoryDir ~/.openclaw/workspace/memory
+npm run mem -- import-openclaw --db ~/.mem8/memories.sqlite --memoryMd ~/.openclaw/workspace/MEMORY.md --memoryDir ~/.openclaw/workspace/memory
 npm run mem -- show --id <memory-id>
 npm run mem -- get --path memory/user/u1/<id>.md
 npm run mem -- delete --id <memory-id>
